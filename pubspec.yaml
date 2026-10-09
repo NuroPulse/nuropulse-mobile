@@ -25,6 +25,7 @@ dependencies:
   share_plus: ^13.3.1
   uuid: ^4.6.0
   wakelock_plus: ^1.8.1
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +39,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/icons/
+
   fonts:
     - family: Plus Jakarta Sans
       fonts:

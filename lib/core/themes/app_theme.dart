@@ -137,7 +137,7 @@ abstract final class AppTheme {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: BaseColors.ink,
+        backgroundColor: BaseColors.primary900,
         contentTextStyle: FontTheme.body.copyWith(color: BaseColors.surface),
         actionTextColor: BaseColors.primary200,
         behavior: SnackBarBehavior.floating,
