@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:nuropulse/app.dart';
+import 'package:nuropulse/services/logger_service.dart';
 
 void main() {
-  runApp(const MainApp());
-}
+  WidgetsFlutterBinding.ensureInitialized();
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final logger = LoggerService();
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
-  }
+  runApp(App(logger: logger));
 }
