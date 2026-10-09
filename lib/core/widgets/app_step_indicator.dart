@@ -75,8 +75,8 @@ class _Segment extends StatelessWidget {
     final (Color background, Color border, double width) = switch (state) {
       _SegmentState.done => (BaseColors.primary, BaseColors.primary, 1.0),
       _SegmentState.current => (
-        BaseColors.primarySoft,
-        BaseColors.primary,
+        BaseColors.primary200,
+        BaseColors.primary700,
         2.0,
       ),
       _SegmentState.upcoming => (

@@ -3,6 +3,7 @@ import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
 import 'package:nuropulse/core/widgets/app_alert.dart';
 import 'package:nuropulse/core/widgets/app_button.dart';
+import 'package:nuropulse/core/widgets/app_dropdown.dart';
 import 'package:nuropulse/core/widgets/app_step_indicator.dart';
 import 'package:nuropulse/core/widgets/app_text_field.dart';
 import 'package:nuropulse/core/widgets/app_toast.dart';
@@ -16,6 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currIndicator = 1;
+  int? selectedDuration;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,21 +80,48 @@ class _HomePageState extends State<HomePage> {
                 total: 4,
                 labels: ["What", "Reminiscense", "What", "What"],
               ),
-              AppButton(
-                label: ">",
-                onPressed: () => {
-                  setState(() {
-                    if (currIndicator < 4) currIndicator++;
-                  }),
-                },
+              SizedBox(
+                height: 64,
+                child: Row(
+                  spacing: 16,
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: "<",
+                        onPressed: () => {
+                          setState(() {
+                            if (currIndicator > 1) currIndicator--;
+                          }),
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: AppButton(
+                        label: ">",
+                        onPressed: () => {
+                          setState(() {
+                            if (currIndicator < 4) currIndicator++;
+                          }),
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              AppButton(
-                label: "<",
-                onPressed: () => {
-                  setState(() {
-                    if (currIndicator > 1) currIndicator--;
-                  }),
-                },
+
+              AppDropdown<int>(
+                label: "Durasi perekaman",
+                placeholder: "Pilih durasi",
+                hint: "Literatur memakai 20–30 detik per rekaman.",
+                value: selectedDuration,
+                items: const [
+                  AppDropdownItem(value: 4, label: "4 detik"),
+                  AppDropdownItem(value: 10, label: "10 detik"),
+                  AppDropdownItem(value: 15, label: "15 detik"),
+                  AppDropdownItem(value: 20, label: "20 detik"),
+                  AppDropdownItem(value: 30, label: "30 detik"),
+                ],
+                onChanged: (value) => setState(() => selectedDuration = value),
               ),
             ],
           ),
