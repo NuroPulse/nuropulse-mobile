@@ -1,6 +1,6 @@
 name: nuropulse
-description: "A new Flutter project."
-publish_to: 'none'
+description: "A Parkinson’s companion app that screens for hand tremor in under half a minute using just your phone’s sensors, then connects you and your neurologist with your medication and tremor history."
+publish_to: "none"
 version: 0.1.0+1
 
 environment:
