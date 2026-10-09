@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:nuropulse/core/themes/base_colors.dart';
-import 'package:nuropulse/core/themes/font_theme.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nuropulse/core/widgets/app_alert.dart';
 import 'package:nuropulse/core/widgets/app_button.dart';
 import 'package:nuropulse/core/widgets/app_dropdown.dart';
 import 'package:nuropulse/core/widgets/app_step_indicator.dart';
 import 'package:nuropulse/core/widgets/app_text_field.dart';
 import 'package:nuropulse/core/widgets/app_toast.dart';
+import 'package:nuropulse/core/widgets/main_app_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,13 +21,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "NuroPulse",
-          style: FontTheme.heading.copyWith(color: BaseColors.onPrimary),
-        ),
-        backgroundColor: BaseColors.primary,
-      ),
+      appBar: MainAppBar(showLogo: true, label: "NuroPulse"),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -88,10 +82,10 @@ class _HomePageState extends State<HomePage> {
                     Expanded(
                       child: AppButton(
                         label: "<",
-                        onPressed: () => {
+                        onPressed: () {
                           setState(() {
                             if (currIndicator > 1) currIndicator--;
-                          }),
+                          });
                         },
                       ),
                     ),
@@ -122,6 +116,10 @@ class _HomePageState extends State<HomePage> {
                   AppDropdownItem(value: 30, label: "30 detik"),
                 ],
                 onChanged: (value) => setState(() => selectedDuration = value),
+              ),
+              AppButton(
+                label: "Minute by Minute",
+                onPressed: () => context.push("/measure"),
               ),
             ],
           ),
