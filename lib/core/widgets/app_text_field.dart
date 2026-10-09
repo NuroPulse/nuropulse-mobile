@@ -3,16 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
 
-/// Reusable labelled text field matching the NuroPulse design system.
-///
-/// [error] is a message the caller already knows (e.g. a failed
-/// connection-code lookup from the backend); [validator] is a client-side
-/// rule checked by a wrapping [Form]. Both can be used together — [error]
-/// always wins and is shown immediately, without waiting for user
-/// interaction or a [Form.validate] call.
-///
-/// Only the design system's `lg` size is implemented: `md` is for the
-/// doctor web dashboard, which is not part of this app.
+/// [error] (a caller-known message) always wins over [validator] and shows
+/// immediately, without waiting for user interaction or [Form.validate].
 class AppTextField extends StatefulWidget {
   const AppTextField({
     super.key,

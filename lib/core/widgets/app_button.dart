@@ -6,10 +6,7 @@ enum AppButtonVariant { primary, secondary, outline, text, danger }
 
 enum AppButtonIconPosition { leading, trailing }
 
-/// Reusable button matching the NuroPulse design system.
-///
-/// Disabled look is not a [AppButtonVariant]: pass `onPressed: null` (or set
-/// [isLoading] to true) and every variant resolves to the same muted state.
+/// Disabled is a state (`onPressed: null`), not a [AppButtonVariant].
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,

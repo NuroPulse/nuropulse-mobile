@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
+import 'package:nuropulse/core/widgets/app_alert.dart';
 import 'package:nuropulse/core/widgets/app_button.dart';
 import 'package:nuropulse/core/widgets/app_text_field.dart';
 
@@ -43,6 +44,11 @@ class HomePage extends StatelessWidget {
                 label: "Nikola Tesla",
                 onPressed: () => {},
                 variant: AppButtonVariant.outline,
+              ),
+              AppAlert(
+                title: "Sakura Abadi",
+                message: "Hujan datang turun membasahi",
+                tone: AppAlertTone.danger,
               ),
             ],
           ),
