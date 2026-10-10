@@ -25,5 +25,11 @@ Future<void> main() async {
     dspConfig,
   );
 
-  runApp(App(logger: logger, measurementRepository: measurementRepository));
+  runApp(
+    App(
+      logger: logger,
+      measurementRepository: measurementRepository,
+      dspConfig: dspConfig,
+    ),
+  );
 }

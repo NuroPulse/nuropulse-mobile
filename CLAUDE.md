@@ -288,6 +288,8 @@ This table is a reference for wording, not a code file. When you write a widget,
 | Gate: data gap                | Ada jeda data yang terlalu panjang                                                                         |
 | Gate: large movement          | Gerakan tangan terlalu besar                                                                               |
 | Gate: weak signal             | Sinyal terlalu lemah (di bawah noise sensor)                                                               |
+| Gate: too short               | Rekaman terlalu pendek untuk dianalisis                                                                    |
+| Gate: flat signal             | Sensor tidak mendeteksi gerakan sama sekali                                                                |
 | Uncalibrated banner           | Ambang belum dikalibrasi                                                                                   |
 | Interrupted                   | Rekaman dihentikan karena aplikasi keluar dari layar.                                                      |
 | Code not found                | Kode koneksi tidak ditemukan. Periksa kembali kode dari dokter Anda.                                       |
