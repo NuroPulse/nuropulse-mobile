@@ -1,0 +1,53 @@
+{
+  "algoVersion": "0.2.0-dev",
+  "calibrated": false,
+  "qualityGate": {
+    "minEffectiveFsHz": 50.0,
+    "maxGapMs": 200.0,
+    "minDurationS": 8.0,
+    "maxLowFrequencyRms": null,
+    "clipRange": null,
+    "noiseFloorRms": null,
+    "note": "TODO(calibrate): movement, clipping, and noise-floor thresholds have no value yet. The noise floor is measured per device model with condition = noise_floor. minDurationS is the structural floor (dropEdgeS + segmentS = 7.0 s) plus a 1 s margin, not a calibrated value — see CLAUDE.md section 13."
+  },
+  "resample": {
+    "gridFsHz": 100.0,
+    "targetFsHz": 50.0,
+    "antiAliasCutoffHz": 20.0,
+    "antiAliasOrder": 4,
+    "antiAliasSos": [
+      [0.04658290663644365, 0.0931658132728873, 0.04658290663644365, 1.0, -0.32897567737095307, 0.064587654916443],
+      [1.0, 2.0, 1.0, 1.0, -0.45311952065238476, 0.4663255707632367]
+    ],
+    "note": "TODO(calibrate): anti-alias order has no source"
+  },
+  "bandpass": {
+    "lowHz": 1.0,
+    "highHz": 20.0,
+    "order": 2,
+    "sos": [
+      [0.5825177969900295, 1.165035593980059, 0.5825177969900295, 1.0, 1.1349459922847829, 0.4151386607358789],
+      [1.0, -2.0, 1.0, 1.0, -1.8223910068754006, 0.837468122663999]
+    ]
+  },
+  "dropEdgeS": 3.0,
+  "welch": {
+    "segmentS": 4.0,
+    "overlapFraction": 0.5,
+    "nfft": 256,
+    "window": "hann",
+    "detrend": "constant",
+    "scaling": "density"
+  },
+  "bands": {
+    "peakSearchHz": [3.0, 12.0],
+    "tremorBandHz": [3.5, 7.0],
+    "ratioBandHz": [1.0, 15.0]
+  },
+  "decision": {
+    "snrMin": 4.0,
+    "bandPowerRatioMin": 0.3,
+    "consistencyMin": 0.6,
+    "note": "Placeholder values from the team's own illustration, not from the literature. Do not present as established evidence."
+  }
+}

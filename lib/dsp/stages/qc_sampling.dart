@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import '../models/qc_result.dart';
+import 'package:nuropulse/dsp/models/qc_result.dart';
 
 class QcSampling {
   const QcSampling._();
@@ -15,6 +15,7 @@ class QcSampling {
         effectiveFsHz: 0,
         jitter: 0,
         maxGapMs: 0,
+        durationS: 0,
         monotonic: false,
       );
     }
@@ -38,6 +39,7 @@ class QcSampling {
         effectiveFsHz: 0,
         jitter: 0,
         maxGapMs: 0,
+        durationS: 0,
         monotonic: false,
       );
     }
@@ -54,6 +56,7 @@ class QcSampling {
       effectiveFsHz: n / spanSeconds,
       jitter: std / mean,
       maxGapMs: maxInterval * 1000,
+      durationS: spanSeconds,
       monotonic: true,
     );
   }

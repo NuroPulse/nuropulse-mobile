@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:fftea/fftea.dart';
 
-import '../models/spectrum.dart';
+import 'package:nuropulse/dsp/models/spectrum.dart';
 
 /// One-sided Welch PSD. Matches scipy.signal.welch with the settings in
 /// CLAUDE.md section 7: Hann window, constant detrend, density scaling,

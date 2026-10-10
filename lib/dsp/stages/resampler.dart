@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import '../dsp_config.dart';
-import 'sos_filter.dart';
+import 'package:nuropulse/dsp/dsp_config.dart';
+import 'package:nuropulse/dsp/stages/sos_filter.dart';
 
 class Resampler {
   const Resampler._();

@@ -1,4 +1,4 @@
-import 'gate_check.dart';
+import 'package:nuropulse/dsp/models/gate_check.dart';
 
 class GateResult {
   const GateResult({required this.check, required this.passed});

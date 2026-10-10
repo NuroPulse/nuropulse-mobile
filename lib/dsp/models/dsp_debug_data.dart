@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'spectrum.dart';
+import 'package:nuropulse/dsp/models/spectrum.dart';
 
 /// Intermediate results kept for the debug views (CLAUDE.md section 9).
 /// Only produced for the live result screen. Saved sessions do not store it.

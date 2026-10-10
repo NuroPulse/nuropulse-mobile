@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import '../dsp_config.dart';
-import '../models/gate_check.dart';
-import '../models/gate_result.dart';
-import '../models/qc_result.dart';
+import 'package:nuropulse/dsp/dsp_config.dart';
+import 'package:nuropulse/dsp/models/gate_check.dart';
+import 'package:nuropulse/dsp/models/gate_result.dart';
+import 'package:nuropulse/dsp/models/qc_result.dart';
 
 class QualityGate {
   const QualityGate._();
@@ -18,6 +18,10 @@ class QualityGate {
       GateResult(
         check: GateCheck.dataGap,
         passed: qc.monotonic && qc.maxGapMs <= config.maxGapMs,
+      ),
+      GateResult(
+        check: GateCheck.tooShort,
+        passed: qc.monotonic && qc.durationS >= config.minDurationS,
       ),
     ];
   }

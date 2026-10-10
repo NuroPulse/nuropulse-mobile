@@ -1,7 +1,7 @@
-import '../dsp_config.dart';
-import '../models/gate_result.dart';
-import '../models/tremor_features.dart';
-import '../models/tremor_status.dart';
+import 'package:nuropulse/dsp/dsp_config.dart';
+import 'package:nuropulse/dsp/models/gate_result.dart';
+import 'package:nuropulse/dsp/models/tremor_features.dart';
+import 'package:nuropulse/dsp/models/tremor_status.dart';
 
 class DecisionRule {
   const DecisionRule._();

@@ -8,6 +8,7 @@ class DspConfig {
     required this.calibrated,
     required this.minEffectiveFsHz,
     required this.maxGapMs,
+    required this.minDurationS,
     required this.gridFsHz,
     required this.targetFsHz,
     required this.antiAliasSos,
@@ -37,6 +38,7 @@ class DspConfig {
       calibrated: _bool(json, 'calibrated'),
       minEffectiveFsHz: _double(gate, 'minEffectiveFsHz'),
       maxGapMs: _double(gate, 'maxGapMs'),
+      minDurationS: _double(gate, 'minDurationS'),
       gridFsHz: _double(resample, 'gridFsHz'),
       targetFsHz: _double(resample, 'targetFsHz'),
       antiAliasSos: _sos(resample, 'antiAliasSos'),
@@ -61,6 +63,11 @@ class DspConfig {
 
   final double minEffectiveFsHz;
   final double maxGapMs;
+
+  /// Below this, a recording is `invalid` with reason `too_short`
+  /// (CLAUDE.md section 10, step 1).
+  final double minDurationS;
+
   final double gridFsHz;
   final double targetFsHz;
 

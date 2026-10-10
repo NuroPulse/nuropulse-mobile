@@ -1,8 +1,8 @@
-import 'dsp_debug_data.dart';
-import 'gate_result.dart';
-import 'qc_result.dart';
-import 'tremor_features.dart';
-import 'tremor_status.dart';
+import 'package:nuropulse/dsp/models/dsp_debug_data.dart';
+import 'package:nuropulse/dsp/models/gate_result.dart';
+import 'package:nuropulse/dsp/models/qc_result.dart';
+import 'package:nuropulse/dsp/models/tremor_features.dart';
+import 'package:nuropulse/dsp/models/tremor_status.dart';
 
 class TremorResult {
   const TremorResult({

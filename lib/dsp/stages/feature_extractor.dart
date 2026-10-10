@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import '../dsp_config.dart';
-import '../models/spectrum.dart';
-import '../models/tremor_features.dart';
-import 'welch.dart';
+import 'package:nuropulse/dsp/dsp_config.dart';
+import 'package:nuropulse/dsp/models/spectrum.dart';
+import 'package:nuropulse/dsp/models/tremor_features.dart';
+import 'package:nuropulse/dsp/stages/welch.dart';
 
 class FeatureExtractor {
   const FeatureExtractor._();

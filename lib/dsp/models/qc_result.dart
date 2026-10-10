@@ -4,6 +4,7 @@ class QcResult {
     required this.effectiveFsHz,
     required this.jitter,
     required this.maxGapMs,
+    required this.durationS,
     required this.monotonic,
   });
 
@@ -13,6 +14,9 @@ class QcResult {
   final double jitter;
 
   final double maxGapMs;
+
+  /// Span from the first to the last timestamp. 0 when [monotonic] is false.
+  final double durationS;
 
   /// False when timestamps repeat or go backwards. The rate is meaningless
   /// in that case, so the gates treat it as a failure.
