@@ -87,7 +87,7 @@ class AppSpectrumChart extends StatelessWidget {
               VerticalRangeAnnotation(
                 x1: tremorBandHz.$1,
                 x2: tremorBandHz.$2,
-                color: BaseColors.primarySoft,
+                color: BaseColors.dangerSoft,
               ),
             ],
           ),
@@ -127,7 +127,7 @@ class AppSpectrumChart extends StatelessWidget {
             LineChartBarData(
               spots: spots,
               isCurved: false,
-              color: BaseColors.primary,
+              color: BaseColors.secondary500,
               barWidth: 2,
               dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(show: false),

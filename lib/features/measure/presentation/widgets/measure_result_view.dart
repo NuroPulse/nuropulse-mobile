@@ -6,7 +6,7 @@ import 'package:nuropulse/core/themes/font_theme.dart';
 import 'package:nuropulse/core/utils/number_format.dart';
 import 'package:nuropulse/core/widgets/app_alert.dart';
 import 'package:nuropulse/core/widgets/app_button.dart';
-import 'package:nuropulse/dsp/dsp_config.dart';
+// import 'package:nuropulse/dsp/dsp_config.dart';
 import 'package:nuropulse/dsp/models/tremor_result.dart';
 import 'package:nuropulse/dsp/models/tremor_status.dart';
 import 'package:nuropulse/features/measure/presentation/cubit/measure_cubit.dart';
@@ -21,7 +21,7 @@ class MeasureResultView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final calibrated = context.read<DspConfig>().calibrated;
+    // final calibrated = context.read<DspConfig>().calibrated;
     final isTremor = result.status == TremorStatus.tremor;
     final features = result.features!;
 
@@ -30,21 +30,26 @@ class MeasureResultView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!calibrated) ...[
-            const AppAlert(
-              tone: AppAlertTone.warning,
-              message: 'Ambang belum dikalibrasi',
-            ),
-            const SizedBox(height: 16),
-          ],
-          AppAlert(
-            tone: isTremor ? AppAlertTone.danger : AppAlertTone.success,
-            message: isTremor
-                ? 'Tremor ritmis terdeteksi. Sebaiknya konsultasikan dengan dokter saraf.'
-                : 'Tremor ritmis tidak terdeteksi pada pengecekan ini. Jika Anda tetap khawatir, konsultasikan dengan dokter.',
-          ),
-          const SizedBox(height: 32),
           Center(
+            child: Image.asset(
+              isTremor
+                  ? 'assets/images/result-tremor.png'
+                  : 'assets/images/result-none.png',
+              height: 160,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(height: 24),
+          // if (!calibrated) ...[
+          //   const AppAlert(
+          //     tone: AppAlertTone.warning,
+          //     message: 'Ambang belum dikalibrasi',
+          //   ),
+          //   const SizedBox(height: 16),
+          // ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 Text(
@@ -59,15 +64,24 @@ class MeasureResultView extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          AppAlert(
+            tone: isTremor ? AppAlertTone.danger : AppAlertTone.success,
+            message: isTremor
+                ? 'Tremor ritmis terdeteksi. Sebaiknya konsultasikan dengan dokter saraf.'
+                : 'Tremor ritmis tidak terdeteksi pada pengecekan ini. Jika Anda tetap khawatir, konsultasikan dengan dokter.',
+          ),
           const Spacer(),
           AppButton(
+            icon: Icons.monitor_heart,
             label: 'Lihat Detail',
-            variant: AppButtonVariant.outline,
+            variant: AppButtonVariant.text,
             onPressed: () => context.push('/measure/detail', extra: result),
           ),
           const SizedBox(height: 12),
           AppButton(
             label: 'Ulangi',
+            icon: Icons.restart_alt,
             onPressed: () => context.read<MeasureCubit>().retry(),
           ),
         ],

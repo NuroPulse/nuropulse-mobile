@@ -30,45 +30,104 @@ class MeasureDetailPage extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         children: [
           if (debug != null && features != null) ...[
-            Text(
-              'Spektrum frekuensi',
-              style: FontTheme.heading.copyWith(color: BaseColors.ink),
+            _DetailCard(
+              title: 'Spektrum frekuensi',
+              child: AppSpectrumChart(
+                spectrum: debug.spectrum,
+                tremorBandHz: config.tremorBandHz,
+                peakSearchHz: config.peakSearchHz,
+                peakFrequencyHz: features.peakFrequencyHz,
+              ),
             ),
-            const SizedBox(height: 8),
-            AppSpectrumChart(
-              spectrum: debug.spectrum,
-              tremorBandHz: config.tremorBandHz,
-              peakSearchHz: config.peakSearchHz,
-              peakFrequencyHz: features.peakFrequencyHz,
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
           ],
           if (features != null) ...[
-            Text(
-              'Fitur sinyal',
-              style: FontTheme.heading.copyWith(color: BaseColors.ink),
+            _DetailCard(
+              title: 'Fitur sinyal',
+              child: AppFeatureTable(features: features),
             ),
-            const SizedBox(height: 8),
-            AppFeatureTable(features: features),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
           ],
-          Text(
-            'Pemeriksaan kualitas',
-            style: FontTheme.heading.copyWith(color: BaseColors.ink),
+          _DetailCard(
+            title: 'Pemeriksaan kualitas',
+            child: AppGateList(gates: result.gates),
           ),
-          const SizedBox(height: 8),
-          AppGateList(gates: result.gates),
-          const SizedBox(height: 32),
-          Text(
-            'Info sampling',
-            style: FontTheme.heading.copyWith(color: BaseColors.ink),
+          const SizedBox(height: 20),
+          _DetailCard(
+            title: 'Info sampling',
+            child: Column(
+              children: [
+                _InfoRow(
+                  label: 'Kecepatan sampling efektif',
+                  value: '${formatNumber(qc.effectiveFsHz, 1)} Hz',
+                ),
+                _InfoRow(label: 'Jitter', value: formatNumber(qc.jitter, 3)),
+                _InfoRow(
+                  label: 'Jeda maksimum',
+                  value: '${formatNumber(qc.maxGapMs, 0)} ms',
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+/// Groups one section's heading and content into a visually distinct panel,
+/// instead of headings and content floating directly on the scaffold.
+class _DetailCard extends StatelessWidget {
+  const _DetailCard({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: BaseColors.surfaceRaised,
+        border: Border.all(color: BaseColors.line),
+        borderRadius: BorderRadius.circular(20), // radius-lg
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: FontTheme.heading.copyWith(color: BaseColors.ink)),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+            ),
+          ),
           Text(
-            'Kecepatan sampling efektif: ${formatNumber(qc.effectiveFsHz, 1)} Hz\n'
-            'Jitter: ${formatNumber(qc.jitter, 3)}\n'
-            'Jeda maksimum: ${formatNumber(qc.maxGapMs, 0)} ms',
-            style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+            value,
+            style: FontTheme.bodyLg.copyWith(
+              color: BaseColors.ink,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
