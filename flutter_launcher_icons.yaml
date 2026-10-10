@@ -1,0 +1,24 @@
+# Config for flutter_launcher_icons (dev_dependency in pubspec.yaml).
+# Run: dart run flutter_launcher_icons
+#
+# Image pointed by the image_path below must be a 1024x1024 PNG
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 21
+
+  # iOS icons can't have an alpha channel (App Store rejects it); flatten
+  # any transparency onto white instead.
+  remove_alpha_ios: true
+  background_color_ios: "#FFFFFF"
+
+  # Recommended upgrade once app_icon.png exists: adaptive icons (Android 8+)
+  # so the mark sits correctly inside each launcher's mask shape instead of
+  # being used as a flat square. Needs a SEPARATE foreground PNG with the
+  # mark centered and padded to Android's safe zone (artwork within the
+  # center 66% of the canvas, transparent background) — a straight SVG
+  # export without that padding will get clipped on round/squircle masks.
+  # Uncomment once that foreground PNG exists:
+  # adaptive_icon_background: "#2941A3" # BaseColors.primary700
+  # adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
