@@ -10,11 +10,11 @@ import 'package:nuropulse/features/measure/presentation/cubit/measure_cubit.dart
 
 const _stepLabels = [
   'Cari posisi duduk yang nyaman, dengan lengan bawah tersangga di atas meja atau pangkuan.',
-  'Letakkan ponsel di punggung tangan Anda, pegang erat atau ikat agar tidak bergeser.',
+  'Letakkan ponsel di punggung tangan Anda, pegang erat atau gunakan forearm strap (jika tersedia) agar tidak bergeser.',
   'Biarkan tangan rileks dan diam. Jangan sentuh layar selama perekaman berlangsung.',
 ];
 
-const _durationOptions = [8, 10, 15, 20, 25, 30];
+const _durationOptions = [10, 15, 20, 25, 30];
 
 /// "Instructions" in the user flow: shown while the
 /// cubit is idle, before the countdown. Walks through prep steps, then lets
@@ -40,6 +40,28 @@ class _MeasureInstructionsViewState extends State<MeasureInstructionsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: BaseColors.focus),
+              boxShadow: [
+                BoxShadow(
+                  color: BaseColors.inkMuted.withValues(alpha: 0.5),
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12), // radius-md
+              child: Image.asset(
+                'assets/images/nuropulse-instruction.jpg',
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           AppStepIndicator(
             current: _step + 1,
             total: _stepLabels.length,
@@ -56,16 +78,11 @@ class _MeasureInstructionsViewState extends State<MeasureInstructionsView> {
           if (_isLastStep) ...[
             Text(
               'Durasi perekaman',
+              textAlign: TextAlign.center,
               style: FontTheme.heading.copyWith(color: BaseColors.ink),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Literatur yang kami rujuk memakai 20–30 detik per rekaman.',
-              style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
-            ),
-            const SizedBox(height: 16),
             AppDropdown<int>(
-              label: 'Pilih durasi',
+              label: '',
               value: _durationSeconds,
               items: [
                 for (final seconds in _durationOptions)
@@ -79,19 +96,20 @@ class _MeasureInstructionsViewState extends State<MeasureInstructionsView> {
           const Spacer(),
           Row(
             children: [
-              if (_step > 0) ...[
-                Expanded(
-                  child: AppButton(
-                    label: 'Kembali',
-                    variant: AppButtonVariant.outline,
-                    onPressed: () => setState(() => _step--),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
               Expanded(
                 child: AppButton(
-                  label: _isLastStep ? 'Mulai' : 'Lanjut',
+                  icon: Icons.arrow_back_ios_rounded,
+                  label: 'Back',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: _step > 0 ? () => setState(() => _step--) : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppButton(
+                  icon: Icons.arrow_forward_ios_rounded,
+                  iconPosition: AppButtonIconPosition.trailing,
+                  label: _isLastStep ? 'Start' : 'Next',
                   onPressed: () {
                     if (_isLastStep) {
                       context.read<MeasureCubit>().start(
