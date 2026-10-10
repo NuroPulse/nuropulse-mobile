@@ -46,8 +46,14 @@ class FeatureExtractor {
       if (psd[i] > psd[k]) k = i;
     }
 
+    // Only refine when k has a neighbor on both sides *inside* the search
+    // band. At k == first or k == last, the true peak may sit right at the
+    // band edge with the spectrum still rising past it — borrowing a
+    // neighbor from outside the band isn't a real peak shape (no a < b > c),
+    // and the parabolic fit becomes numerically unstable (denom near zero),
+    // producing a wildly wrong frequency. Report the bin frequency as-is.
     var delta = 0.0;
-    if (k > 0 && k < psd.length - 1) {
+    if (k > first && k < last) {
       final a = psd[k - 1];
       final b = psd[k];
       final c = psd[k + 1];
@@ -86,7 +92,11 @@ class FeatureExtractor {
 
   static double _median(Float64List psd, (int, int) range) {
     final (first, last) = range;
-    final values = Float64List.sublistView(psd, first, last + 1)..sort();
+    // A real copy, not sublistView: that returns a *view* into the same
+    // buffer as psd, and sorting it would silently reorder psd itself —
+    // corrupting the spectrum everything downstream (including the debug
+    // chart) reads afterwards.
+    final values = Float64List.fromList(psd.sublist(first, last + 1))..sort();
     final mid = values.length ~/ 2;
     if (values.length.isOdd) return values[mid];
     return (values[mid - 1] + values[mid]) / 2;
