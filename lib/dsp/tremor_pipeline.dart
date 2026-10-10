@@ -46,7 +46,7 @@ class TremorPipeline {
     } on ArgumentError {
       // The configured minDurationS passed, but this combination of
       // dropEdgeS/segmentS/filter length still leaves too few samples to
-      // filter — the same "too short to process" outcome, just caught later.
+      // filter.
       gates.add(const GateResult(check: GateCheck.tooShort, passed: false));
       return TremorResult(status: TremorStatus.invalid, qc: qc, gates: gates);
     }

@@ -1,2 +1,2 @@
-/// The three outcomes of the pipeline. Never a diagnosis (CLAUDE.md section 7).
+/// The three outcomes of the pipeline. Never a diagnosis.
 enum TremorStatus { none, tremor, invalid }
