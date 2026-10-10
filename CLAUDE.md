@@ -36,7 +36,7 @@ Source of truth for data sent to the backend: the **NuroPulse Data Contract** (G
 
 - **Tremor-based detection only.** No gait, voice, handwriting, or any other Parkinson signal.
 - **Rest condition only.** The check is always `condition = rest` (hand supported and relaxed). `postural` is not supported in this version.
-- **Variable-second recording.** The user can pick how many seconds they will record the tremor-detection for. The literature (we referenced) used 20–30 s per recording. Make it so the recording be chooseable from 4 seconds to 30 seconds.
+- **Variable-second recording.** The user can pick how many seconds they will record the tremor-detection for. The literature (we referenced) used 20–30 s per recording. Make it so the recording be chooseable from 8 seconds to 30 seconds. (Originally planned as 4–30 s; raised to 8 s because the demo's calibrated `dropEdgeS` (3 s) + one Welch `segmentS` (4 s) already need 7 s of processed signal — see Section 10 step 4.)
 - **Output is only `none`, `tremor`, or `invalid`.** `tremor` means rhythmic shaking was found in the tremor band during this check. Frequency alone does not separate Parkinson's tremor from essential tremor, drug-induced tremor, or enhanced physiological tremor (caffeine, fatigue, anxiety).
 - **No diagnosis, no disease name in results.** The app can say that a tremor was found and recommend seeing a neurologist. It cannot say a person has or does not have a disease. It never says "healthy".
 - **Thresholds are not calibrated.** They are the team's starting values, not validated on smartphones. While `calibrated` is `false` in the DSP config, the result screen shows the "Ambang belum dikalibrasi" banner.
@@ -95,7 +95,7 @@ Defined in the data contract. Only two models are fixed so far: **Profile** and 
 | `measured_at`    | timestamptz    | Device time at the check                                        |
 | `uploaded_at`    | timestamptz    | Set by the backend. Mobile never sends it.                      |
 | `condition`      | text           | Always `rest` in this version                                   |
-| `duration_s`     | number         | from 4 to 30 seconds                                            |
+| `duration_s`     | number         | from 8 to 30 seconds                                            |
 | `status`         | text           | `none`, `tremor`, or `invalid`                                  |
 | `invalid_reason` | text           | Only when `invalid`                                             |
 | `features`       | object         | Not sent when `invalid`                                         |
@@ -288,6 +288,8 @@ This table is a reference for wording, not a code file. When you write a widget,
 | Gate: data gap                | Ada jeda data yang terlalu panjang                                                                         |
 | Gate: large movement          | Gerakan tangan terlalu besar                                                                               |
 | Gate: weak signal             | Sinyal terlalu lemah (di bawah noise sensor)                                                               |
+| Gate: too short               | Rekaman terlalu pendek untuk dianalisis                                                                    |
+| Gate: flat signal             | Sensor tidak mendeteksi gerakan sama sekali                                                                |
 | Uncalibrated banner           | Ambang belum dikalibrasi                                                                                   |
 | Interrupted                   | Rekaman dihentikan karena aplikasi keluar dari layar.                                                      |
 | Code not found                | Kode koneksi tidak ditemukan. Periksa kembali kode dari dokter Anda.                                       |
@@ -337,7 +339,7 @@ Result and recommendation text must **never** say or imply a diagnosis (no "Anda
 
 ## 10. DSP specification (version 0.1.0, work in progress)
 
-> Every number below is a **starting value**, not validated on smartphones for a 4-second window. Values change through `dsp_config.json` after calibration. If a parameter has no source, mark it `TODO(calibrate)` instead of inventing a reference. Do not present any of it as established evidence.
+> Every number below is a **starting value**, not validated on smartphones for the shortest (8-second) window. Values change through `dsp_config.json` after calibration. If a parameter has no source, mark it `TODO(calibrate)` instead of inventing a reference. Do not present any of it as established evidence.
 
 ### Protocol (shown to the user before recording)
 
@@ -353,19 +355,19 @@ QC sampling -> resample -> demean -> band-pass -> edge handling -> Welch per axi
             -> features -> quality gate -> decision
 ```
 
-1. **QC sampling.** Compute the effective sampling rate and maximum gap from the real timestamps. Starting thresholds: effective rate >= 50 Hz, no gap > 200 ms. Failure gives `invalid` (`low_sampling_rate`, `sampling_gap`). A recording shorter than the configured minimum gives `too_short`.
+1. **QC sampling.** Compute the effective sampling rate and maximum gap from the real timestamps. Starting thresholds: effective rate >= 50 Hz, no gap > 200 ms. Failure gives `invalid` (`low_sampling_rate`, `sampling_gap`). A recording shorter than `minDurationS` (currently 8 s, see step 4) gives `too_short`.
 2. **Resample.** Linear interpolation on the real timestamps to a uniform grid, with a low-pass (about 20 Hz) for anti-aliasing before decimating to the working rate (starting plan: 50 Hz). Target rates are config-driven. Guard against duplicate timestamps (zero time span).
 3. **Demean**, then **band-pass 1–20 Hz**, Butterworth order 2, applied forward then backward (zero-phase).
    - **Do not design filters in Dart.** SOS coefficients are generated in Python (`scipy.signal.butter(..., output='sos')`) for the working rate, stored in `dsp_config.json`, and only the filter application is implemented in Dart. Python lives in the demo repository.
-4. **Edge handling.** The filter has transients at both ends and a 4-second window leaves little room to discard samples. `TODO(calibrate)`: decide between dropping a short edge (starting value 0.5 s) and recording a short pre-roll that is not counted in `duration_s`. Whatever is chosen, `duration_s` is the analyzed length and must match the contract's value of 4 for this version. Record the decision in this file.
+4. **Edge handling.** Decided from the demo's shipped `dsp_config.json`: drop the first **3.0 s** (`dropEdgeS`) of the filtered signal rather than record an uncounted pre-roll. `duration_s` is the full recorded length (the drop happens after filtering, not before capture). Because the Welch stage below also needs one full 4 s segment, the pipeline needs `dropEdgeS + segmentS = 7.0 s` of recording just to produce one segment — this is why the app's minimum recording length is **8 s**, not 4 s (Section 2). `TODO(calibrate)`: this combination was tuned against the demo's fixed 20–25 s recordings, not validated at 8 s specifically.
 5. **Spectrum (Welch), per axis, then sum the per-axis PSDs.**
-   - Segment length, overlap, and window come from config. A 4-second window cannot hold the demo's 4-second segments more than once. Starting plan: 2 s segments, 50% overlap, Hann window, nFFT 256. `TODO(calibrate)`.
-   - Frequency resolution with 2 s segments is about 0.5 Hz. Do not report peak-frequency precision finer than the resolution supports; parabolic interpolation is allowed.
+   - Segment length, overlap, and window come from config. Shipped values: **4 s segments** (`segmentS`), 50% overlap, Hann window, nFFT 256. `TODO(calibrate)`.
+   - Frequency resolution with 4 s segments is about 0.25 Hz; the zero-padded bin spacing (nFFT 256 at 50 Hz) is about 0.195 Hz. Do not report peak-frequency precision finer than the resolution supports; parabolic interpolation is allowed.
    - Match `scipy.signal.welch` defaults (`detrend='constant'`, `scaling='density'`, mean averaging) so Dart and Python agree.
    - Sum PSD across axes. **Do not use the vector magnitude** of a zero-mean signal (rectification doubles the apparent frequency). Summing PSD also removes dependence on phone orientation.
 6. **Features** (as in the contract; tremor band 3.5–7 Hz, ratio and SNR over 1–15 Hz):
    - `peak_frequency_hz`: argmax of the PSD in the peak-search range (starting 3–12 Hz).
-   - `band_power_ratio`, `snr`, `band_rms_g` (convert to g), `consistency` (fraction of Welch segments whose own peak lies in the tremor band; with only a few segments this value is coarse, so treat it as such).
+   - `band_power_ratio`, `snr`, `band_rms_g`, `consistency` (fraction of Welch segments whose own peak lies in the tremor band; with only a few segments this value is coarse, so treat it as such). `TremorFeatures.bandRms` inside `lib/dsp/` stays in **m/s²**, matching the Python reference exactly so golden tests compare like for like — convert to g (divide by 9.80665) only when building the contract's `band_rms_g` payload field in `features/measure/data/`, never inside `lib/dsp/`.
 7. **Quality gate.** Any failed check makes the result `invalid` and the app asks for a repeat:
    - sampling rate and gap (step 1);
    - excessive voluntary movement (large low-frequency energy or RMS before band-pass);
@@ -409,7 +411,7 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 ## 12. Testing
 
 - `flutter test` must pass before any change is considered done.
-- **DSP unit tests** (`test/dsp/`): synthetic sines at known frequencies (peak within the Welch resolution for the configured segment length), amplitude behavior, jittered timestamps, gap rejection, duplicate timestamps, a 4-second recording specifically, all-zero signal (must be `invalid`, not `none`).
+- **DSP unit tests** (`test/dsp/`): synthetic sines at known frequencies (peak within the Welch resolution for the configured segment length), amplitude behavior, jittered timestamps, gap rejection, duplicate timestamps, a recording below `minDurationS` (must be `invalid` with `too_short`, not crash), all-zero signal (must be `invalid`, not `none`).
 - **Golden tests**: see Section 10.
 - **Cubit tests** with `bloc_test` and `mocktail`: `MeasureCubit` state sequences for success, invalid, failure, and interruption; upload failure after a valid result; `AuthCubit` transitions.
 - **Repository tests** with mocked datasources: idempotent re-upload (same `id`), retry queue, mapping of backend error codes to `Failure` types.
@@ -421,11 +423,11 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 
 1. **Medication schedule and log:** no data contract yet. Do not create models, tables, or screens until it is written.
 2. **Measurements without an account:** upload with no `patient_id` (backend decision) or keep local only. What happens to them after the user registers (claimed by the account, or left alone) is undecided.
-3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`.
+3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.
 5. **Registration method and fields** (email and password assumed; `full_name` required).
 6. **Weekly check reminders:** intended product behavior, not in the contract. Needs a decision before adding a local-notification package.
-7. **Four-second window:** edge handling and Welch segment layout (Section 10, steps 4 and 5) are placeholders until checked against the demo's data.
+7. ~~**Four-second window:**~~ **Resolved 2026-10-10.** Checked against the demo's shipped `dsp_config.json` and golden tests: `dropEdgeS` (3.0 s) + one Welch `segmentS` (4.0 s) need 7.0 s of recording before the pipeline can produce anything, so a 4 s minimum is structurally impossible. The app's minimum recording length is now **8 s**, not 4 s (Section 2, Section 10 step 4). Still open: these values were tuned against the demo's fixed 20–25 s recordings, never validated at 8 s specifically — revisit once real 8–12 s recordings are available.
 8. **Sensor units and timestamps:** confirm on a device, then record here: whether `event.timestamp` is hardware sensor time or arrival time, whether Android 12+ needs `HIGH_SAMPLING_RATE_SENSORS` to reach about 100 Hz on target phones, and the unit of `userAccelerometer` (expected m/s²).
 9. **Doctor account signing in on mobile:** the exact message and flow.
 
