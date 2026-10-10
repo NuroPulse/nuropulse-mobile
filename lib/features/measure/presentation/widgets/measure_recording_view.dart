@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
+import 'package:nuropulse/core/utils/number_format.dart';
 import 'package:nuropulse/features/measure/domain/entity/live_window.dart';
 
 class MeasureRecordingView extends StatelessWidget {
@@ -27,7 +28,7 @@ class MeasureRecordingView extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${seconds.toStringAsFixed(1).replaceAll('.', ',')} detik',
+            '${formatNumber(seconds, 1)} detik',
             style: FontTheme.caption.copyWith(color: BaseColors.inkMuted),
           ),
           const SizedBox(height: 24),

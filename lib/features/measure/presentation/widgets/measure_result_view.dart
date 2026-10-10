@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
+import 'package:nuropulse/core/utils/number_format.dart';
 import 'package:nuropulse/core/widgets/app_alert.dart';
 import 'package:nuropulse/core/widgets/app_button.dart';
 import 'package:nuropulse/dsp/dsp_config.dart';
@@ -51,7 +53,7 @@ class MeasureResultView extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_formatHz(features.peakFrequencyHz)} Hz',
+                  '${formatNumber(features.peakFrequencyHz, 1)} Hz',
                   style: FontTheme.data.copyWith(color: BaseColors.ink),
                 ),
               ],
@@ -59,15 +61,17 @@ class MeasureResultView extends StatelessWidget {
           ),
           const Spacer(),
           AppButton(
+            label: 'Lihat Detail',
+            variant: AppButtonVariant.outline,
+            onPressed: () => context.push('/measure/detail', extra: result),
+          ),
+          const SizedBox(height: 12),
+          AppButton(
             label: 'Ulangi',
             onPressed: () => context.read<MeasureCubit>().retry(),
           ),
         ],
       ),
     );
-  }
-
-  static String _formatHz(double value) {
-    return value.toStringAsFixed(1).replaceAll('.', ',');
   }
 }
