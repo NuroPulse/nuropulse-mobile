@@ -421,7 +421,7 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 
 1. **Medication schedule and log:** no data contract yet. Do not create models, tables, or screens until it is written.
 2. **Measurements without an account:** upload with no `patient_id` (backend decision) or keep local only. What happens to them after the user registers (claimed by the account, or left alone) is undecided.
-3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`.
+3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.
 5. **Registration method and fields** (email and password assumed; `full_name` required).
 6. **Weekly check reminders:** intended product behavior, not in the contract. Needs a decision before adding a local-notification package.

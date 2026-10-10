@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nuropulse/core/errors/failure.dart';
-import 'package:nuropulse/dsp/models/gate_check.dart';
 import 'package:nuropulse/dsp/models/tremor_result.dart';
 import 'package:nuropulse/dsp/models/tremor_status.dart';
 import 'package:nuropulse/features/measure/domain/entity/invalid_reason.dart';
@@ -136,13 +135,7 @@ class MeasureCubit extends Cubit<MeasureState> {
   List<InvalidReason> _reasonsFrom(TremorResult result) {
     return [
       for (final gate in result.gates)
-        if (!gate.passed)
-          switch (gate.check) {
-            GateCheck.sampling => InvalidReason.sampling,
-            GateCheck.dataGap => InvalidReason.dataGap,
-            GateCheck.tooShort => InvalidReason.tooShort,
-            GateCheck.flatSignal => InvalidReason.flatSignal,
-          },
+        if (!gate.passed) invalidReasonFor(gate.check),
     ];
   }
 
