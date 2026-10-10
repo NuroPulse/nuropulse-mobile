@@ -58,6 +58,7 @@ class MeasureCubit extends Cubit<MeasureState> {
     emit(
       MeasureState.recording(
         elapsed: Duration.zero,
+        totalDuration: _recordingDuration!,
         window: _repository.liveWindow(liveSamples),
       ),
     );
@@ -73,6 +74,7 @@ class MeasureCubit extends Cubit<MeasureState> {
     emit(
       MeasureState.recording(
         elapsed: elapsed,
+        totalDuration: _recordingDuration!,
         window: _repository.liveWindow(liveSamples),
       ),
     );

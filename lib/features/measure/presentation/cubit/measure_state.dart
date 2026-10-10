@@ -15,6 +15,7 @@ sealed class MeasureState with _$MeasureState {
 
   const factory MeasureState.recording({
     required Duration elapsed,
+    required Duration totalDuration,
     required LiveWindow window,
   }) = MeasureRecording;
 

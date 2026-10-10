@@ -64,8 +64,16 @@ class _MeasureViewState extends State<_MeasureView>
               MeasureCountdown(:final secondsLeft) => MeasureCountdownView(
                 secondsLeft: secondsLeft,
               ),
-              MeasureRecording(:final elapsed, :final window) =>
-                MeasureRecordingView(elapsed: elapsed, window: window),
+              MeasureRecording(
+                :final elapsed,
+                :final totalDuration,
+                :final window,
+              ) =>
+                MeasureRecordingView(
+                  elapsed: elapsed,
+                  totalDuration: totalDuration,
+                  window: window,
+                ),
               MeasureProcessing() => const MeasureProcessingView(),
               MeasureSuccess(:final result) => MeasureResultView(
                 result: result,

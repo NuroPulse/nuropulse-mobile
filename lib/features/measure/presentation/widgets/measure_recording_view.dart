@@ -8,15 +8,23 @@ class MeasureRecordingView extends StatelessWidget {
   const MeasureRecordingView({
     super.key,
     required this.elapsed,
+    required this.totalDuration,
     required this.window,
   });
 
   final Duration elapsed;
+  final Duration totalDuration;
   final LiveWindow window;
 
   @override
   Widget build(BuildContext context) {
     final seconds = elapsed.inMilliseconds / 1000;
+    final fraction = totalDuration.inMilliseconds == 0
+        ? 0.0
+        : (elapsed.inMilliseconds / totalDuration.inMilliseconds).clamp(
+            0.0,
+            1.0,
+          );
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -26,10 +34,31 @@ class MeasureRecordingView extends StatelessWidget {
             'Merekam… tahan tangan tetap rileks',
             style: FontTheme.bodyLg.copyWith(color: BaseColors.ink),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${formatNumber(seconds, 1)} detik',
-            style: FontTheme.caption.copyWith(color: BaseColors.inkMuted),
+          const SizedBox(height: 16),
+          Text.rich(
+            TextSpan(
+              text: formatNumber(seconds, 0),
+              style: FontTheme.data.copyWith(color: BaseColors.ink),
+              children: [
+                TextSpan(
+                  text: ' / ${totalDuration.inSeconds}s',
+                  style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999), // radius-full
+              child: LinearProgressIndicator(
+                value: fraction,
+                minHeight: 10,
+                backgroundColor: BaseColors.line,
+                color: BaseColors.primary,
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           Expanded(

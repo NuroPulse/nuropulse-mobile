@@ -134,12 +134,12 @@ return failure(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  idle,TResult Function( int secondsLeft)?  countdown,TResult Function( Duration elapsed,  LiveWindow window)?  recording,TResult Function()?  processing,TResult Function( TremorResult result,  String measurementId)?  success,TResult Function( List<InvalidReason> reasons)?  invalid,TResult Function( Failure failure)?  failure,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  idle,TResult Function( int secondsLeft)?  countdown,TResult Function( Duration elapsed,  Duration totalDuration,  LiveWindow window)?  recording,TResult Function()?  processing,TResult Function( TremorResult result,  String measurementId)?  success,TResult Function( List<InvalidReason> reasons)?  invalid,TResult Function( Failure failure)?  failure,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case MeasureIdle() when idle != null:
 return idle();case MeasureCountdown() when countdown != null:
 return countdown(_that.secondsLeft);case MeasureRecording() when recording != null:
-return recording(_that.elapsed,_that.window);case MeasureProcessing() when processing != null:
+return recording(_that.elapsed,_that.totalDuration,_that.window);case MeasureProcessing() when processing != null:
 return processing();case MeasureSuccess() when success != null:
 return success(_that.result,_that.measurementId);case MeasureInvalid() when invalid != null:
 return invalid(_that.reasons);case MeasureFailure() when failure != null:
@@ -161,12 +161,12 @@ return failure(_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  idle,required TResult Function( int secondsLeft)  countdown,required TResult Function( Duration elapsed,  LiveWindow window)  recording,required TResult Function()  processing,required TResult Function( TremorResult result,  String measurementId)  success,required TResult Function( List<InvalidReason> reasons)  invalid,required TResult Function( Failure failure)  failure,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  idle,required TResult Function( int secondsLeft)  countdown,required TResult Function( Duration elapsed,  Duration totalDuration,  LiveWindow window)  recording,required TResult Function()  processing,required TResult Function( TremorResult result,  String measurementId)  success,required TResult Function( List<InvalidReason> reasons)  invalid,required TResult Function( Failure failure)  failure,}) {final _that = this;
 switch (_that) {
 case MeasureIdle():
 return idle();case MeasureCountdown():
 return countdown(_that.secondsLeft);case MeasureRecording():
-return recording(_that.elapsed,_that.window);case MeasureProcessing():
+return recording(_that.elapsed,_that.totalDuration,_that.window);case MeasureProcessing():
 return processing();case MeasureSuccess():
 return success(_that.result,_that.measurementId);case MeasureInvalid():
 return invalid(_that.reasons);case MeasureFailure():
@@ -184,12 +184,12 @@ return failure(_that.failure);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  idle,TResult? Function( int secondsLeft)?  countdown,TResult? Function( Duration elapsed,  LiveWindow window)?  recording,TResult? Function()?  processing,TResult? Function( TremorResult result,  String measurementId)?  success,TResult? Function( List<InvalidReason> reasons)?  invalid,TResult? Function( Failure failure)?  failure,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  idle,TResult? Function( int secondsLeft)?  countdown,TResult? Function( Duration elapsed,  Duration totalDuration,  LiveWindow window)?  recording,TResult? Function()?  processing,TResult? Function( TremorResult result,  String measurementId)?  success,TResult? Function( List<InvalidReason> reasons)?  invalid,TResult? Function( Failure failure)?  failure,}) {final _that = this;
 switch (_that) {
 case MeasureIdle() when idle != null:
 return idle();case MeasureCountdown() when countdown != null:
 return countdown(_that.secondsLeft);case MeasureRecording() when recording != null:
-return recording(_that.elapsed,_that.window);case MeasureProcessing() when processing != null:
+return recording(_that.elapsed,_that.totalDuration,_that.window);case MeasureProcessing() when processing != null:
 return processing();case MeasureSuccess() when success != null:
 return success(_that.result,_that.measurementId);case MeasureInvalid() when invalid != null:
 return invalid(_that.reasons);case MeasureFailure() when failure != null:
@@ -303,10 +303,11 @@ as int,
 
 
 class MeasureRecording implements MeasureState {
-  const MeasureRecording({required this.elapsed, required this.window});
+  const MeasureRecording({required this.elapsed, required this.totalDuration, required this.window});
   
 
  final  Duration elapsed;
+ final  Duration totalDuration;
  final  LiveWindow window;
 
 /// Create a copy of MeasureState
@@ -319,16 +320,16 @@ $MeasureRecordingCopyWith<MeasureRecording> get copyWith => _$MeasureRecordingCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MeasureRecording&&(identical(other.elapsed, elapsed) || other.elapsed == elapsed)&&(identical(other.window, window) || other.window == window));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MeasureRecording&&(identical(other.elapsed, elapsed) || other.elapsed == elapsed)&&(identical(other.totalDuration, totalDuration) || other.totalDuration == totalDuration)&&(identical(other.window, window) || other.window == window));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,elapsed,window);
+int get hashCode => Object.hash(runtimeType,elapsed,totalDuration,window);
 
 @override
 String toString() {
-  return 'MeasureState.recording(elapsed: $elapsed, window: $window)';
+  return 'MeasureState.recording(elapsed: $elapsed, totalDuration: $totalDuration, window: $window)';
 }
 
 
@@ -339,7 +340,7 @@ abstract mixin class $MeasureRecordingCopyWith<$Res> implements $MeasureStateCop
   factory $MeasureRecordingCopyWith(MeasureRecording value, $Res Function(MeasureRecording) _then) = _$MeasureRecordingCopyWithImpl;
 @useResult
 $Res call({
- Duration elapsed, LiveWindow window
+ Duration elapsed, Duration totalDuration, LiveWindow window
 });
 
 
@@ -356,9 +357,10 @@ class _$MeasureRecordingCopyWithImpl<$Res>
 
 /// Create a copy of MeasureState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? elapsed = null,Object? window = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? elapsed = null,Object? totalDuration = null,Object? window = null,}) {
   return _then(MeasureRecording(
 elapsed: null == elapsed ? _self.elapsed : elapsed // ignore: cast_nullable_to_non_nullable
+as Duration,totalDuration: null == totalDuration ? _self.totalDuration : totalDuration // ignore: cast_nullable_to_non_nullable
 as Duration,window: null == window ? _self.window : window // ignore: cast_nullable_to_non_nullable
 as LiveWindow,
   ));
