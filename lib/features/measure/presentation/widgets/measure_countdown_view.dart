@@ -40,7 +40,10 @@ class MeasureCountdownView extends StatelessWidget {
               children: [
                 SizedBox.expand(
                   child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 1.0, end: secondsLeft / totalSeconds),
+                    tween: Tween(
+                      begin: 1.0,
+                      end: (secondsLeft - 1) / totalSeconds,
+                    ),
                     duration: const Duration(seconds: 1),
                     curve: Curves.linear,
                     builder: (context, value, child) =>
