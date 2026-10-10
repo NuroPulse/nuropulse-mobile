@@ -121,6 +121,10 @@ class _HomePageState extends State<HomePage> {
                 label: "Minute by Minute",
                 onPressed: () => context.push("/measure"),
               ),
+              AppButton(
+                label: "Debug",
+                onPressed: () => context.push("/debug"),
+              ),
             ],
           ),
         ),

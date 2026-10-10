@@ -26,6 +26,7 @@ dependencies:
   uuid: ^4.6.0
   wakelock_plus: ^1.8.1
   flutter_svg: ^2.3.0
+  lottie: ^3.6.1
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +44,7 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/lotties/
     - assets/config/dsp_config.json
 
   fonts:

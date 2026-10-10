@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
 
@@ -11,11 +12,14 @@ class MeasureProcessingView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(color: BaseColors.primary),
-          const SizedBox(height: 16),
+          Lottie.asset("assets/lotties/pulse.lottie", width: 160),
+          const SizedBox(height: 8),
           Text(
-            'Memproses…',
-            style: FontTheme.bodyLg.copyWith(color: BaseColors.ink),
+            'Memproses...',
+            style: FontTheme.bodyLg.copyWith(
+              color: BaseColors.secondary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
