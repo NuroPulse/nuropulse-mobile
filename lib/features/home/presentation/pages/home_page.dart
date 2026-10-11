@@ -7,6 +7,7 @@ import 'package:nuropulse/core/widgets/app_step_indicator.dart';
 import 'package:nuropulse/core/widgets/app_text_field.dart';
 import 'package:nuropulse/core/widgets/app_toast.dart';
 import 'package:nuropulse/core/widgets/main_app_bar.dart';
+import 'package:nuropulse/core/widgets/main_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: MainAppBar(showLogo: true, label: "NuroPulse"),
+      bottomNavigationBar: MainNavBar(selectedIndex: 0, onTap: (n) => {}),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
