@@ -10,6 +10,69 @@ The codebase for NuroPulse's patient-facing mobile app, **a Parkinson’s compan
 
 </div>
 
+## Getting started
+
+```bash
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs   # generates Freezed / JSON code
+dart format .
+flutter analyze
+flutter test
+flutter run                                                 # physical Android device
+```
+
+## DSP pipeline
+
+`lib/dsp/` is pure Dart (no Flutter, no I/O) and deterministic: the same `DspInput` always produces the same `TremorResult`. `TremorPipeline.analyze()` in [`lib/dsp/tremor_pipeline.dart`](./lib/dsp/tremor_pipeline.dart) orchestrates the stages below in order; any gate failure short-circuits straight to an `invalid` result instead of running the remaining stages.
+
+All thresholds, filter coefficients, and band edges come from [`assets/config/dsp_config.json`](./assets/config/dsp_config.json) (`DspConfig`).
+
+```mermaid
+flowchart TD
+    IN(["DspInput<br/>tUs · x · y · z @ ~100Hz"]) --> QC["QcSampling.measure<br/>effective rate, max gap, monotonic?"]
+
+    QC --> G1{"Gate: checkSampling<br/>monotonic AND<br/>effectiveFsHz ≥ 50 AND<br/>maxGapMs ≤ 200 AND<br/>durationS ≥ 8s"}
+    G1 -->|fail| INV1[["invalid<br/>sampling / dataGap / tooShort"]]
+
+    G1 -->|pass| RS["Resampler.toTargetRate ×3 axes<br/>1 interpolate onto uniform 100Hz grid<br/>2 anti-alias low-pass @ 20Hz, order 4, filtfilt<br/>3 decimate → 50Hz (targetFsHz)"]
+    RS --> DM["demean ×3 axes<br/>subtract per-axis mean"]
+    DM --> BP["SosFilter.filtfilt ×3 axes<br/>band-pass 1–20Hz, Butterworth order 2, zero-phase"]
+    BP --> ED["drop first dropEdgeS = 3.0s<br/>trims filter transient + post-countdown tap"]
+    ED -->|too few samples left| INV2[["invalid: tooShort"]]
+
+    ED --> G2{"Gate: checkFlatSignal<br/>all 3 resampled axes constant?"}
+    G2 -->|yes, dead sensor| INV3[["invalid: flatSignal"]]
+
+    G2 -->|no| WE["Welch.compute per filtered axis<br/>4.0s segments · 50% overlap · Hann window · nfft 256<br/>matches scipy.signal.welch(detrend='constant', scaling='density')"]
+    WE --> SUM["sum PSD across x, y, z<br/>(not vector magnitude — avoids doubling apparent frequency)"]
+    SUM -->|signal shorter than one segment| INV4[["invalid: tooShort"]]
+
+    SUM --> FE["FeatureExtractor.compute"]
+    FE --> F1["peakFrequencyHz<br/>argmax in 3–12Hz (peakSearchHz)<br/>+ parabolic interpolation"]
+    FE --> F2["bandPowerRatio<br/>∫3.5–7Hz power / ∫1–15Hz power"]
+    FE --> F3["snr<br/>peak power / median power in 1–15Hz"]
+    FE --> F4["bandRms (g)<br/>√(∫3.5–7Hz power)"]
+    FE --> F5["consistency<br/>fraction of Welch segments whose own<br/>peak falls in 3.5–7Hz"]
+
+    F1 --> DR["DecisionRule.decide"]
+    F2 --> DR
+    F3 --> DR
+    F4 --> DR
+    F5 --> DR
+
+    DR --> G3{"peak in tremorBandHz 3.5–7Hz AND<br/>snr ≥ 4.0 AND<br/>bandPowerRatio ≥ 0.3 AND<br/>consistency ≥ 0.6 ?"}
+    G3 -->|yes| TREMOR[["tremor"]]
+    G3 -->|no| NONE[["none"]]
+
+    classDef invalid fill:#FFF5C2,stroke:#735C00,color:#735C00
+    classDef tremor fill:#FCE6E4,stroke:#B3261E,color:#B3261E
+    classDef none fill:#EBFCEF,stroke:#0E6936,color:#0E6936
+
+    class INV1,INV2,INV3,INV4 invalid
+    class TREMOR tremor
+    class NONE none
+```
+
 ## Dependencies
 
 | Package                                  | Version           | Purpose                                              |
@@ -21,8 +84,10 @@ The codebase for NuroPulse's patient-facing mobile app, **a Parkinson’s compan
 | `hive_ce` / `hive_ce_flutter`            | ^2.20.1 / ^2.4.0  | Local storage for measurements & settings            |
 | `sensors_plus`                           | ^7.1.1            | Accelerometer sampling for the tremor check          |
 | `fftea`                                  | ^1.5.0+1          | FFT for the on-device DSP pipeline                   |
-| `fl_chart`                               | ^1.2.0            | History trend charts                                 |
+| `fl_chart`                               | ^1.2.0            | Frequency-spectrum chart on the detail screen        |
 | `flutter_svg`                            | ^2.3.0            | SVG icons/logo rendering                             |
+| `lottie`                                 | ^3.6.1            | Pulse animation on the processing screen             |
+| `google_nav_bar`                         | ^5.0.7            | Bottom navigation bar for the home shell             |
 | `wakelock_plus`                          | ^1.8.1            | Keeps the screen on while recording                  |
 | `device_info_plus` / `package_info_plus` | ^13.3.0 / ^10.2.2 | Device & app metadata sent with a measurement        |
 | `path_provider`                          | ^2.1.6            | Filesystem paths for local storage                   |
@@ -33,4 +98,4 @@ The codebase for NuroPulse's patient-facing mobile app, **a Parkinson’s compan
 | `flutter_secure_storage`                 | planned           | Auth session storage, once implemented               |
 | `flutter_dotenv`                         | planned           | Supabase URL/anon key from `.env`, once implemented  |
 
-Dev-only: `flutter_lints`, `build_runner`, `bloc_test`, `mocktail`.
+Dev-only: `flutter_lints`, `build_runner`, `bloc_test`, `mocktail`, `flutter_launcher_icons`.
