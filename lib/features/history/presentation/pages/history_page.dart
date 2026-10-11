@@ -20,7 +20,7 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: MainAppBar(label: 'Riwayat'),
+      appBar: MainAppBar(label: 'Riwayat', showLogo: true),
       body: BlocBuilder<HistoryCubit, HistoryState>(
         builder: (context, state) {
           return switch (state) {
