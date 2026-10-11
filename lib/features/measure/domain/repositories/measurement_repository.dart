@@ -1,5 +1,6 @@
 import 'package:nuropulse/features/measure/domain/entity/live_window.dart';
 import 'package:nuropulse/features/measure/domain/entity/measure_outcome.dart';
+import 'package:nuropulse/features/measure/domain/entity/measurement_record.dart';
 
 /// Records the user-accelerometer stream, analyzes it, and saves the result.
 abstract class MeasurementRepository {
@@ -19,4 +20,7 @@ abstract class MeasurementRepository {
   /// [NetworkFailure]). Throws [SensorFailure], [AnalysisFailure], or
   /// [StorageFailure].
   Future<MeasureOutcome> finishRecording();
+
+  /// All saved measurements, most recent first. Throws [StorageFailure].
+  Future<List<MeasurementRecord>> getMeasurements();
 }

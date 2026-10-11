@@ -26,6 +26,11 @@ class MeasurementLocalDatasource {
     return value == null ? null : _toJsonMap(value);
   }
 
+  /// Every saved entry, unordered.
+  List<Map<String, dynamic>> readAll() {
+    return [for (final value in _hive.measurements.values) _toJsonMap(value)];
+  }
+
   static Map<String, dynamic> _toJsonMap(Map<dynamic, dynamic> map) {
     return {
       for (final entry in map.entries)
