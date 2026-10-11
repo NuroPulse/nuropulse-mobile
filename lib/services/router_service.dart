@@ -6,6 +6,7 @@ import 'package:nuropulse/features/dev/presentation/pages/debug_page.dart';
 import 'package:nuropulse/features/home/presentation/pages/home_page.dart';
 import 'package:nuropulse/features/home/presentation/pages/home_placeholder_page.dart';
 import 'package:nuropulse/features/home/presentation/pages/home_shell_page.dart';
+import 'package:nuropulse/features/history/presentation/pages/history_page.dart';
 import 'package:nuropulse/features/measure/presentation/pages/measure_detail_page.dart';
 import 'package:nuropulse/features/measure/presentation/pages/measure_page.dart';
 
@@ -37,11 +38,7 @@ final router = GoRouter(
           routes: [
             GoRoute(
               path: '/history',
-              builder: (context, state) => const HomePlaceholderPage(
-                icon: Icons.history,
-                title: 'Riwayat',
-                message: 'Riwayat hasil pengecekan Anda akan hadir di sini.',
-              ),
+              builder: (context, state) => const HistoryPage(),
             ),
           ],
         ),

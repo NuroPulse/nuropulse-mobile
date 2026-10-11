@@ -8,6 +8,7 @@ import 'package:nuropulse/core/errors/failure.dart';
 import 'package:nuropulse/dsp/dsp_config.dart';
 import 'package:nuropulse/dsp/models/dsp_input.dart';
 import 'package:nuropulse/dsp/models/tremor_result.dart';
+import 'package:nuropulse/dsp/models/tremor_status.dart';
 import 'package:nuropulse/dsp/tremor_pipeline.dart';
 import 'package:nuropulse/features/measure/data/datasources/measurement_local_datasource.dart';
 import 'package:nuropulse/features/measure/data/datasources/sensor_datasource.dart';
@@ -15,6 +16,7 @@ import 'package:nuropulse/features/measure/data/models/device_model.dart';
 import 'package:nuropulse/features/measure/data/models/measurement_model.dart';
 import 'package:nuropulse/features/measure/domain/entity/live_window.dart';
 import 'package:nuropulse/features/measure/domain/entity/measure_outcome.dart';
+import 'package:nuropulse/features/measure/domain/entity/measurement_record.dart';
 import 'package:nuropulse/features/measure/domain/repositories/measurement_repository.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -105,6 +107,34 @@ class MeasurementRepositoryImpl implements MeasurementRepository {
     }
 
     return MeasureOutcome(measurementId: id, result: result);
+  }
+
+  @override
+  Future<List<MeasurementRecord>> getMeasurements() async {
+    try {
+      final records = [for (final entry in _local.readAll()) _toRecord(entry)]
+        ..sort((a, b) => b.measuredAt.compareTo(a.measuredAt));
+      return records;
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StorageFailure('Failed to read measurements: $error'),
+        stackTrace,
+      );
+    }
+  }
+
+  MeasurementRecord _toRecord(Map<String, dynamic> entry) {
+    final model = MeasurementModel.fromJson(
+      entry['measurement'] as Map<String, dynamic>,
+    );
+    return MeasurementRecord(
+      id: model.id,
+      measuredAt: DateTime.parse(model.measuredAt),
+      status: TremorStatus.values.byName(model.status),
+      durationS: model.durationS,
+      uploaded: entry['uploaded'] as bool,
+      peakFrequencyHz: model.features?.peakFrequencyHz,
+    );
   }
 
   DspInput _buildInput() {
