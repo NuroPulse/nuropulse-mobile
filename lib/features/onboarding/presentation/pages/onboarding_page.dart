@@ -249,21 +249,29 @@ class _PageDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: i == index ? 24 : 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: i == index ? BaseColors.primary : BaseColors.line,
-              borderRadius: BorderRadius.circular(999), // radius-full
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: BaseColors.primary300,
+        borderRadius: BorderRadius.circular(100.0),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (var i = 0; i < count; i++)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: i == index ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: i == index ? BaseColors.primary : BaseColors.onSecondary,
+                borderRadius: BorderRadius.circular(999), // radius-full
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
