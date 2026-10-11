@@ -3,8 +3,11 @@ import 'package:nuropulse/app.dart';
 import 'package:nuropulse/features/measure/data/datasources/measurement_local_datasource.dart';
 import 'package:nuropulse/features/measure/data/datasources/sensor_datasource.dart';
 import 'package:nuropulse/features/measure/data/repositories/measurement_repository_impl.dart';
+import 'package:nuropulse/features/onboarding/data/datasources/onboarding_local_datasource.dart';
+import 'package:nuropulse/features/onboarding/data/repositories/onboarding_repository_impl.dart';
 import 'package:nuropulse/services/dsp_config_loader.dart';
 import 'package:nuropulse/services/logger_service.dart';
+import 'package:nuropulse/services/router_service.dart';
 import 'package:nuropulse/services/storage/hive_service.dart';
 
 Future<void> main() async {
@@ -24,12 +27,17 @@ Future<void> main() async {
     MeasurementLocalDatasource(hive),
     dspConfig,
   );
+  final onboardingRepository = OnboardingRepositoryImpl(
+    OnboardingLocalDatasource(hive),
+  );
 
   runApp(
     App(
       logger: logger,
       measurementRepository: measurementRepository,
       dspConfig: dspConfig,
+      onboardingRepository: onboardingRepository,
+      router: createRouter(onboardingRepository: onboardingRepository),
     ),
   );
 }
