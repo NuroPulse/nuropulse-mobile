@@ -1,134 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nuropulse/core/widgets/app_alert.dart';
+import 'package:nuropulse/core/themes/base_colors.dart';
+import 'package:nuropulse/core/themes/font_theme.dart';
 import 'package:nuropulse/core/widgets/app_button.dart';
-import 'package:nuropulse/core/widgets/app_dropdown.dart';
-import 'package:nuropulse/core/widgets/app_step_indicator.dart';
-import 'package:nuropulse/core/widgets/app_text_field.dart';
-import 'package:nuropulse/core/widgets/app_toast.dart';
 import 'package:nuropulse/core/widgets/main_app_bar.dart';
-import 'package:nuropulse/core/widgets/main_nav_bar.dart';
 
-class HomePage extends StatefulWidget {
+/// Home tab: a summary of the last check plus the entry point into a new
+/// one. The "last check" card has no data source yet (no history feature),
+/// so it only ever shows the honest empty state for now.
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int currIndicator = 1;
-  int? selectedDuration;
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: MainAppBar(showLogo: true, label: "NuroPulse"),
-      bottomNavigationBar: MainNavBar(selectedIndex: 0, onTap: (n) => {}),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            spacing: 10,
-            children: [
-              AppButton(
-                label: "Down the Waterline",
-                onPressed: () => {
-                  showAppToast(
-                    context,
-                    message:
-                        "What a Fool Believes from the album Minute by Minute by The Doobie Brothers",
-                    tone: AppToastTone.danger,
+      appBar: MainAppBar(showLogo: true, label: 'NuroPulse'),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pengecekan terakhir',
+              style: FontTheme.heading.copyWith(color: BaseColors.ink),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: BaseColors.surfaceRaised,
+                border: Border.all(color: BaseColors.line),
+                borderRadius: BorderRadius.circular(20), // radius-lg
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.monitor_heart_outlined,
+                    size: 40,
+                    color: BaseColors.inkMuted,
                   ),
-                },
-              ),
-              AppTextField(
-                label: "Great Gig in the Sky",
-                hint: "There is no dark side of the moon",
-                placeholder: "Ex: Pink Floyd",
-              ),
-              AppTextField(
-                label: "Duvet",
-                unit: "tahun",
-                prefixIcon: Icon(Icons.accessibility_sharp),
-              ),
-              AppTextField(
-                label: "Catch the Rainbow",
-                prefixIcon: Icon(Icons.accessibility_sharp),
-                obscureText: true,
-              ),
-              AppButton(
-                label: "Nikola Tesla",
-                onPressed: () => {
-                  showAppToast(
-                    context,
-                    message: "Serenata Jiwa yang Lara Sunyi",
+                  const SizedBox(height: 12),
+                  Text(
+                    'Belum ada riwayat pengecekan',
+                    textAlign: TextAlign.center,
+                    style: FontTheme.bodyLg.copyWith(color: BaseColors.ink),
                   ),
-                },
-                variant: AppButtonVariant.outline,
-              ),
-              AppAlert(
-                title: "Sakura Abadi",
-                message: "Hujan datang turun membasahi",
-                tone: AppAlertTone.danger,
-              ),
-              AppStepIndicator(
-                current: currIndicator,
-                total: 4,
-                labels: ["What", "Reminiscense", "What", "What"],
-              ),
-              SizedBox(
-                height: 64,
-                child: Row(
-                  spacing: 16,
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        label: "<",
-                        onPressed: () {
-                          setState(() {
-                            if (currIndicator > 1) currIndicator--;
-                          });
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: AppButton(
-                        label: ">",
-                        onPressed: () => {
-                          setState(() {
-                            if (currIndicator < 4) currIndicator++;
-                          }),
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              AppDropdown<int>(
-                label: "Durasi perekaman",
-                placeholder: "Pilih durasi",
-                hint: "Literatur memakai 20–30 detik per rekaman.",
-                value: selectedDuration,
-                items: const [
-                  AppDropdownItem(value: 4, label: "4 detik"),
-                  AppDropdownItem(value: 10, label: "10 detik"),
-                  AppDropdownItem(value: 15, label: "15 detik"),
-                  AppDropdownItem(value: 20, label: "20 detik"),
-                  AppDropdownItem(value: 30, label: "30 detik"),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Mulai cek pertama Anda untuk melihat ringkasannya di sini.',
+                    textAlign: TextAlign.center,
+                    style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+                  ),
                 ],
-                onChanged: (value) => setState(() => selectedDuration = value),
               ),
-              AppButton(
-                label: "Minute by Minute",
-                onPressed: () => context.push("/measure"),
-              ),
-              AppButton(
-                label: "Debug",
-                onPressed: () => context.push("/debug"),
-              ),
-            ],
-          ),
+            ),
+            const Spacer(),
+            AppButton(
+              label: 'Mulai Cek Tremor',
+              icon: Icons.favorite_border,
+              onPressed: () => context.push('/measure'),
+            ),
+          ],
         ),
       ),
     );
