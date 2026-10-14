@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nuropulse/core/themes/base_colors.dart';
 import 'package:nuropulse/core/themes/font_theme.dart';
+import 'package:nuropulse/core/widgets/app_button.dart';
 import 'package:nuropulse/core/widgets/main_app_bar.dart';
 
 /// Stand-in for a home-shell tab whose feature isn't built yet. Medication
@@ -41,6 +43,11 @@ class HomePlaceholderPage extends StatelessWidget {
                 message,
                 textAlign: TextAlign.center,
                 style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+              ),
+              const SizedBox(height: 8),
+              AppButton(
+                label: "To Debug Page",
+                onPressed: () => context.go("/debug/kitchen-sink"),
               ),
             ],
           ),
