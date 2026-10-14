@@ -18,6 +18,8 @@ The tremor pipeline was first proven in a separate feasibility app (the "biomark
 
 Source of truth for data sent to the backend: the **NuroPulse Data Contract** (Google Doc, "NuroPulse Data Contract"; link: https://docs.google.com/document/d/1OKP_CYbWHBk-w0SY65_Eyy82N_Fs982KTxe1qxnRd4A/edit). Section 4 summarizes it. If this file and the contract disagree, the contract wins for data shapes, and this file should be corrected.
 
+The actual deployed schema (tables, columns, RLS policies, functions) can be read directly from `supabase/migrations/*.sql` — pulled from the live project with `supabase db pull` (first pulled 2026-10-15). Treat it as the most concrete reference for exact column names/types/constraints when the Doc is silent or ambiguous; Section 4 is kept in sync with it.
+
 ---
 
 ## 2. Features and limits
@@ -30,7 +32,7 @@ Source of truth for data sent to the backend: the **NuroPulse Data Contract** (G
 | Account registration and login  | Role is always `patient` on mobile.                                                                                               |
 | Connect to a doctor             | The patient enters the doctor's personal connection code. A patient connects to **one** doctor.                                   |
 | Measurement history             | List of past checks with their status.                                                                                            |
-| Medication schedule and log     | **Planned. The data contract for these models does not exist yet.** Do not implement or invent models until it does (Section 13). |
+| Medication schedule and log     | **Schema now exists in Supabase** (`medicines`, `medication_schedules`, `patient_medications`, `medication_logs` — see Section 4). Not yet buildable: two of those tables have no working RLS policies yet. Confirm with the backend before starting (Section 13 item 1). |
 
 ### Limits (don't state this in code or UI)
 
@@ -66,43 +68,66 @@ Install -> Onboarding -> Home -> Cek Tremor (no account needed)
 3. **Diagnosis in real life.** The user visits a neurologist. At the end of diagnosis, the neurologist gives the user their **connection code**.
 4. **Register and connect.** The user registers (full name plus credentials), logs in, and enters the doctor's connection code. The account is now linked to that doctor and the doctor sees the patient on the dashboard.
 5. **Ongoing use.** The user repeats checks regularly (about weekly is the intended rhythm; reminders are not decided yet, see Section 13). Checks made while logged in are owned by the account (`patient_id` is set).
-6. **Medication** (planned): the doctor sets the schedule from the dashboard, the patient logs doses in the app.
+6. **Medication** (schema exists, mobile not built — Section 13 item 1): the doctor sets the schedule from the dashboard, the patient logs doses in the app.
 
-Checks made before registering have no owner. What happens to them after registration is an open decision (Section 13).
+Checks made before registering have no owner (`patient_id` null) — the backend confirms this is supported (Section 4, Section 13 item 2). After registration, a `claim_measurements(uuid[])` RPC exists to attach previously-local measurement ids to the new account. Mobile does not yet call either of these; see Section 13 item 2 for what's still to implement.
 
 ---
 
 ## 4. Data contract summary (mobile view)
 
-Defined in the data contract. Only two models are fixed so far: **Profile** and **Measurement**.
+Kept in sync with the live Supabase schema (`supabase/migrations/*.sql`, see Section 1). Tables marked **(doctor dashboard only)** exist in the database but this mobile app never reads or writes them — listed here only so their existence and RLS shape are known.
 
-### Profile
+### profiles (shared identity row, one per auth user)
 
 | Column            | Type        | Notes                                                                                                    |
 | ----------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
 | `id`              | uuid        | Same as the Supabase auth user id                                                                        |
-| `role`            | text        | `patient` or `doctor`. Backend-only. The mobile app never writes it.                                     |
+| `role`            | text        | `patient` or `doctor`. Backend-only (set by the `handle_new_user` trigger from auth `app_metadata`). The mobile app never writes it. |
 | `full_name`       | text        | Name shown to the doctor                                                                                 |
-| `connection_code` | text        | Doctors only. Mobile never reads or writes it, except that the patient types a doctor's code to connect. |
-| `created_at`      | timestamptz |                                                                                                          |
+| `email`           | text        | Mirrors the auth user's email                                                                            |
+| `connection_code` | text        | Doctors only (`CHECK`-enforced: present iff `role = 'doctor'`). Mobile never reads or writes it, except that the patient types a doctor's code to connect. |
+| `doctor_id`       | uuid, optional | Set once a patient connects to a doctor (`CHECK`-enforced: only ever set when `role = 'patient'`). |
+| `connected_at`    | timestamptz, optional | Set at the same time as `doctor_id`.                                                            |
+| `created_at`      | timestamptz |                                                                                                           |
 
-### Measurement (one per check)
+A profile is created automatically by a database trigger on signup — the mobile app never inserts into `profiles` directly, only reads/updates it.
+
+Role-specific detail lives in a separate table, also auto-created by the same trigger:
+
+### patient_details (one row per patient profile)
+
+| Column           | Type        | Notes                        |
+| ---------------- | ----------- | ----------------------------- |
+| `id`             | uuid        | = `profiles.id`               |
+| `date_of_birth`  | date, optional |                             |
+| `gender`         | text, optional | `male` or `female`         |
+| `phone`          | text, optional |                             |
+| `email`          | text, optional | Set from the auth email on creation |
+| `diagnosis`      | text, optional | Not currently surfaced anywhere in this app — do not add UI for it without asking |
+| `updated_at`     | timestamptz |                                |
+
+### doctor_details (doctor dashboard only)
+
+`id` (= `profiles.id`), `phone`, `avatar_url`, `str_number`, `specialization`, `organization_name`, `organization_type`, `verification_status` (`pending` / `verified` / `needs_revision`), `verified_at`, `updated_at`.
+
+### measurements (one per check)
 
 | Column           | Type           | Mobile value                                                    |
 | ---------------- | -------------- | --------------------------------------------------------------- |
 | `id`             | uuid           | Generated on the device (uuid v4). Makes re-sending idempotent. |
-| `patient_id`     | uuid, optional | Logged-in user id, or omitted when not logged in                |
+| `patient_id`     | uuid, optional | Logged-in user id, or omitted when not logged in — the backend confirms anonymous inserts (`patient_id = null`) are allowed (Section 13 item 2). |
 | `measured_at`    | timestamptz    | Device time at the check                                        |
-| `uploaded_at`    | timestamptz    | Set by the backend. Mobile never sends it.                      |
-| `condition`      | text           | Always `rest` in this version                                   |
-| `duration_s`     | number         | from 8 to 30 seconds                                            |
-| `status`         | text           | `none`, `tremor`, or `invalid`                                  |
-| `invalid_reason` | text           | Only when `invalid`                                             |
-| `features`       | object         | Not sent when `invalid`                                         |
-| `algo_version`   | text           | `0.1.0` in this version                                         |
-| `device`         | object         | Device metadata                                                 |
+| `uploaded_at`    | timestamptz    | Set by the backend (a trigger forces `now()` on every insert regardless of what's sent). Mobile never sends it. |
+| `condition`      | text           | Always `rest` in this version. The `CHECK` constraint also allows `postural` server-side, but the app must never send it (Section 2). |
+| `duration_s`     | number         | from 8 to 30 seconds                                             |
+| `status`         | text           | `none`, `tremor`, or `invalid`                                   |
+| `invalid_reason` | text           | Only when `invalid` (`CHECK`-enforced: present iff `status = 'invalid'`). Free text — no enum constraint in the database, so the mobile list in Section 13 item 3 is still the authority. |
+| `features`       | object (jsonb) | Not sent when `invalid` (`CHECK`-enforced)                       |
+| `algo_version`   | text           | `0.1.0` in this version                                          |
+| `device`         | object (jsonb) | Device metadata — stored as plain jsonb, no column-level shape enforced, so Section 13 item 4's field list is still the only source for what keys to send |
 
-`features` object:
+`features` object (also promoted into five generated columns — `peak_frequency_hz`, `band_power_ratio`, `snr`, `band_rms_g`, `consistency` — read directly off `features ->> '<key>'`, so the JSON keys below must match exactly or the generated columns come back null):
 
 | Key                 | Unit   | Meaning                                                                     |
 | ------------------- | ------ | --------------------------------------------------------------------------- |
@@ -114,7 +139,25 @@ Defined in the data contract. Only two models are fixed so far: **Profile** and 
 
 JSON keys use `snake_case` exactly as above. Dart fields use `camelCase` and map through Freezed/json_serializable (`@JsonKey`).
 
-The contract references an `invalid_reason` list and a `device` object layout that are not written out yet. See Section 13 for the values used until the backend confirms.
+### RPCs the mobile app calls (through Supabase, not plain table access)
+
+| Function                       | Who calls it | Purpose                                                                                     |
+| ------------------------------- | ------------- | --------------------------------------------------------------------------------------------- |
+| `connect_to_doctor(p_code)`     | patient       | Validates a doctor's connection code, sets `profiles.doctor_id`/`connected_at`. Raises with Postgres error code `P0002` on an invalid code — map that to `ConnectionCodeFailure` in `ConnectionRepository`. |
+| `claim_measurements(uuid[])`    | patient       | Attaches the given local measurement ids to the now-logged-in account (`patient_id = auth.uid()`), but only rows where `patient_id` is still null. Call this right after registration/login with any ids saved while logged out. |
+
+### Medication (schema exists; mobile feature not built — Section 13 item 1)
+
+| Table                 | Purpose                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `medicines`             | Shared catalog: `name`, `common_dosage`, `notes`. **No working RLS policy yet** — currently unreadable/unwritable by `anon`/`authenticated`. |
+| `medication_schedules`  | Looks superseded by `patient_medications` below — has no RLS policies either, and its `patient_id`/`doctor_id`/`medicine_id` columns default to `gen_random_uuid()`, which looks like a bug (a foreign key should never silently default to a random id). Do not build against this table without confirming with the backend first. |
+| `patient_medications`   | The one that actually works: `patient_id`, `medicine_id`, `dose`, `schedule_times` (array of `time`), `start_date`/`end_date`, `is_active`, `prescribed_by` (doctor). RLS: patient reads own; doctor has full access to their own patients' rows. |
+| `medication_logs`       | One row per dose taken/skipped: `patient_medication_id`, `scheduled_at`, `status` (default `taken`), `taken_at`, `patient_id`. RLS: patient reads/writes own; doctor reads their patients'. |
+
+### Doctor dashboard only — exists, not consumed by this app
+
+`alerts` (doctor is notified when a connected patient's check comes back `tremor` — a trigger creates this automatically) and `notifications` (`recipient_id` is always the doctor for alert-triggered rows). Both are in the `supabase_realtime` publication. Out of scope here per Section 14 ("the doctor-side UI").
 
 ---
 
@@ -326,7 +369,7 @@ Result and recommendation text must **never** say or imply a diagnosis (no "Anda
 1. After analysis, build the measurement (Section 4) with a new uuid v4, then save it to Hive **before** showing the result.
 2. If logged in, set `patient_id`. Then upload through `MeasurementRepository`. If upload fails (offline, server error), keep the item with `uploaded = false` and retry later (app start, login, connectivity regained).
 3. Re-sending must never create duplicates: the same `id` is sent every time.
-4. If not logged in, whether the measurement is uploaded with no `patient_id`, or kept only on the device, is a **backend decision not yet made** (Section 13). Until it is, keep it local and do not upload it.
+4. If not logged in: the backend confirms uploading with no `patient_id` is supported (RLS allows anonymous insert — Section 4, Section 13 item 2). **Mobile does not implement this yet** — `MeasurementRepositoryImpl` currently always keeps unauthenticated measurements local-only. Implementing the upload-while-logged-out path, and calling `claim_measurements` after the user registers, is still open work.
 5. `uploaded_at` is never set by the app.
 
 ### Auth
@@ -421,8 +464,8 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 
 ## 13. Open items (do not guess; ask or follow the backend)
 
-1. **Medication schedule and log:** no data contract yet. Do not create models, tables, or screens until it is written.
-2. **Measurements without an account:** upload with no `patient_id` (backend decision) or keep local only. What happens to them after the user registers (claimed by the account, or left alone) is undecided.
+1. **Medication schedule and log:** ~~no data contract yet~~ **Partially resolved 2026-10-15.** The schema exists (`medicines`, `medication_schedules`, `patient_medications`, `medication_logs` — Section 4). Still open: `medicines` and `medication_schedules` have no working RLS policies (unusable as-is), and `medication_schedules` has a likely bug (FK columns defaulting to `gen_random_uuid()`). `patient_medications` + `medication_logs` look usable. Confirm the `medicines`/`medication_schedules` gaps with the backend before building the `medication` feature folder.
+2. **Measurements without an account:** ~~undecided~~ **Resolved 2026-10-15.** The backend supports anonymous inserts (`patient_id = null`, RLS policy `measurements: insert own or anonymous`), and a `claim_measurements(uuid[])` RPC attaches local-only measurement ids to the account after registration (Section 4). **Still open:** mobile doesn't implement either side of this yet (Section 9 step 4) — that's an implementation task, not a backend question anymore.
 3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.
 5. **Registration method and fields** (email and password assumed; `full_name` required).
