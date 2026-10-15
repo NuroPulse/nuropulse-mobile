@@ -2,6 +2,7 @@ part 'sensor_failure.dart';
 part 'analysis_failure.dart';
 part 'storage_failure.dart';
 part 'network_failure.dart';
+part 'auth_failure.dart';
 
 /// Failures thrown by repositories and caught by Cubits.
 ///
@@ -10,8 +11,7 @@ part 'network_failure.dart';
 /// (CLAUDE.md section 7).
 ///
 /// Subtypes live in part files because a sealed class can only be extended
-/// from its own library. Only the subtypes the measure feature needs exist
-/// so far; add more (AuthFailure, ConnectionCodeFailure, ...) as their
+/// from its own library. Add more (ConnectionCodeFailure, ...) as their
 /// features are built.
 sealed class Failure implements Exception {
   const Failure(this.message);

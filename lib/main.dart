@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nuropulse/app.dart';
 import 'package:nuropulse/core/environments/env.dart';
+import 'package:nuropulse/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:nuropulse/features/auth/data/datasources/profile_remote_datasource.dart';
+import 'package:nuropulse/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:nuropulse/features/measure/data/datasources/measurement_local_datasource.dart';
 import 'package:nuropulse/features/measure/data/datasources/sensor_datasource.dart';
 import 'package:nuropulse/features/measure/data/repositories/measurement_repository_impl.dart';
@@ -11,6 +14,7 @@ import 'package:nuropulse/services/dsp_config_loader.dart';
 import 'package:nuropulse/services/logger_service.dart';
 import 'package:nuropulse/services/router_service.dart';
 import 'package:nuropulse/services/storage/hive_service.dart';
+import 'package:nuropulse/services/storage/secure_storage_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -20,6 +24,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: Env.supabaseUrl,
     publishableKey: Env.supabasePublishableKey,
+    authOptions: FlutterAuthClientOptions(localStorage: SecureStorageService()),
   );
 
   final logger = LoggerService();
@@ -39,6 +44,10 @@ Future<void> main() async {
   final onboardingRepository = OnboardingRepositoryImpl(
     OnboardingLocalDatasource(hive),
   );
+  final authRepository = AuthRepositoryImpl(
+    AuthRemoteDatasource(Supabase.instance.client),
+    ProfileRemoteDatasource(Supabase.instance.client),
+  );
 
   runApp(
     App(
@@ -46,6 +55,7 @@ Future<void> main() async {
       measurementRepository: measurementRepository,
       dspConfig: dspConfig,
       onboardingRepository: onboardingRepository,
+      authRepository: authRepository,
       router: createRouter(onboardingRepository: onboardingRepository),
     ),
   );
