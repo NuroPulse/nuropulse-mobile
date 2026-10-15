@@ -45,14 +45,35 @@ class HistoryPage extends StatelessWidget {
                       onRefresh: () => context.read<HistoryCubit>().load(),
                       child: ListView.separated(
                         padding: const EdgeInsets.all(24),
-                        itemCount: records.length,
+                        itemCount: records.length + 1,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) =>
-                            _HistoryTile(record: records[index]),
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return _SummaryHeader(count: records.length);
+                          }
+                          return _HistoryTile(record: records[index - 1]);
+                        },
                       ),
                     ),
           };
         },
+      ),
+    );
+  }
+}
+
+class _SummaryHeader extends StatelessWidget {
+  const _SummaryHeader({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        '$count pengecekan tercatat',
+        style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
       ),
     );
   }
@@ -96,19 +117,22 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon, label) = switch (record.status) {
+    final (color, softColor, icon, label) = switch (record.status) {
       TremorStatus.tremor => (
         BaseColors.danger,
+        BaseColors.dangerSoft,
         Icons.error_outline,
         'Tremor terdeteksi',
       ),
       TremorStatus.none => (
         BaseColors.success,
+        BaseColors.successSoft,
         Icons.check_circle_outline,
         'Tidak terdeteksi',
       ),
       TremorStatus.invalid => (
         BaseColors.warning,
+        BaseColors.warningSoft,
         Icons.warning_amber_rounded,
         'Tidak valid',
       ),
@@ -123,7 +147,13 @@ class _HistoryTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 28),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(color: softColor, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: Icon(icon, color: color, size: 22),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

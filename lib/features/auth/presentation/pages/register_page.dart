@@ -79,6 +79,35 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: BaseColors.primarySoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person_add_alt_outlined,
+                        size: 32,
+                        color: BaseColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Buat akun baru',
+                    textAlign: TextAlign.center,
+                    style: FontTheme.title.copyWith(color: BaseColors.ink),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Daftar untuk mulai memantau tremor dan terhubung '
+                    'dengan dokter Anda.',
+                    textAlign: TextAlign.center,
+                    style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+                  ),
+                  const SizedBox(height: 32),
                   if (failure != null) ...[
                     AppAlert(
                       tone: AppAlertTone.danger,
@@ -89,6 +118,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   AppTextField(
                     label: 'Nama lengkap',
                     controller: _fullName,
+                    prefixIcon: Icon(
+                      Icons.person_outline,
+                      color: BaseColors.inkMuted,
+                    ),
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -102,6 +135,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   AppTextField(
                     label: 'Email',
                     controller: _email,
+                    prefixIcon: Icon(
+                      Icons.mail_outline,
+                      color: BaseColors.inkMuted,
+                    ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -116,6 +153,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   AppTextField(
                     label: 'Nomor telepon',
                     controller: _phoneNumber,
+                    prefixIcon: Icon(
+                      Icons.phone_outlined,
+                      color: BaseColors.inkMuted,
+                    ),
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -130,6 +171,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   AppTextField(
                     label: 'Kata sandi',
                     controller: _password,
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: BaseColors.inkMuted,
+                    ),
                     obscureText: true,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -143,6 +188,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   AppTextField(
                     label: 'Konfirmasi kata sandi',
                     controller: _confirmPassword,
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: BaseColors.inkMuted,
+                    ),
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),

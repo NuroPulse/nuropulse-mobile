@@ -40,6 +40,7 @@ class ConnectionRepositoryImpl implements ConnectionRepository {
       return ConnectedDoctor(
         id: json['id'] as String,
         fullName: json['full_name'] as String,
+        phone: json['phone'] as String,
       );
     } catch (error, stackTrace) {
       if (error is Failure) rethrow;

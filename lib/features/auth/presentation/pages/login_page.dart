@@ -56,6 +56,34 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: BaseColors.primarySoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.favorite_border,
+                        size: 32,
+                        color: BaseColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Selamat datang kembali',
+                    textAlign: TextAlign.center,
+                    style: FontTheme.title.copyWith(color: BaseColors.ink),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Masuk untuk melanjutkan pemantauan tremor Anda.',
+                    textAlign: TextAlign.center,
+                    style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+                  ),
+                  const SizedBox(height: 32),
                   if (failure != null) ...[
                     AppAlert(
                       tone: AppAlertTone.danger,
@@ -66,6 +94,10 @@ class _LoginPageState extends State<LoginPage> {
                   AppTextField(
                     label: 'Email',
                     controller: _email,
+                    prefixIcon: Icon(
+                      Icons.mail_outline,
+                      color: BaseColors.inkMuted,
+                    ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -80,6 +112,10 @@ class _LoginPageState extends State<LoginPage> {
                   AppTextField(
                     label: 'Kata sandi',
                     controller: _password,
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: BaseColors.inkMuted,
+                    ),
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
