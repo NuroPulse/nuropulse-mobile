@@ -15,6 +15,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     required String fullName,
+    required String phoneNumber,
   });
 
   /// Signs out and throws [AuthFailure] if the account's role is not

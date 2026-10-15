@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuropulse/dsp/models/tremor_result.dart';
+import 'package:nuropulse/features/auth/presentation/pages/login_page.dart';
+import 'package:nuropulse/features/auth/presentation/pages/profile_gate_page.dart';
+import 'package:nuropulse/features/auth/presentation/pages/register_page.dart';
 import 'package:nuropulse/features/dev/presentation/pages/component_gallery_page.dart';
 import 'package:nuropulse/features/dev/presentation/pages/debug_page.dart';
 import 'package:nuropulse/features/history/presentation/pages/history_page.dart';
@@ -55,15 +58,16 @@ GoRouter createRouter({required OnboardingRepository onboardingRepository}) {
             routes: [
               GoRoute(
                 path: '/profile',
-                builder: (context, state) => const HomePlaceholderPage(
-                  icon: Icons.person_outline,
-                  title: 'Profil',
-                  message: 'Profil dan koneksi dokter akan hadir di sini.',
-                ),
+                builder: (context, state) => const ProfileGatePage(),
               ),
             ],
           ),
         ],
+      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterPage(),
       ),
       GoRoute(
         path: '/measure',

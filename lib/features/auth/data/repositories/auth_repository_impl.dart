@@ -16,7 +16,15 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<Profile?> get profileChanges {
     return _auth.authStateChanges().asyncMap((session) async {
       if (session == null) return null;
-      return _fetchProfile(session.user.id);
+      try {
+        return await _fetchProfile(session.user.id);
+      } catch (error, stackTrace) {
+        if (error is Failure) rethrow;
+        Error.throwWithStackTrace(
+          AuthFailure('Failed to load profile: $error'),
+          stackTrace,
+        );
+      }
     });
   }
 
@@ -25,12 +33,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required String fullName,
+    required String phoneNumber,
   }) async {
     try {
       final response = await _auth.signUp(
         email: email,
         password: password,
         fullName: fullName,
+        phoneNumber: phoneNumber,
       );
       final userId = response.session?.user.id;
       // No session means the project requires email confirmation. The
@@ -88,7 +98,10 @@ class AuthRepositoryImpl implements AuthRepository {
     final profile = await _fetchProfile(userId);
     if (profile.role != UserRole.patient) {
       await _auth.signOut();
-      throw const AuthFailure('Only patient accounts can sign in on mobile');
+      throw const AuthFailure(
+        'Only patient accounts can sign in on mobile',
+        reason: AuthFailureReason.wrongRole,
+      );
     }
     return profile;
   }

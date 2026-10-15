@@ -83,15 +83,18 @@ Kept in sync with the live Supabase schema (`supabase/migrations/*.sql`, see Sec
 | Column            | Type        | Notes                                                                                                    |
 | ----------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
 | `id`              | uuid        | Same as the Supabase auth user id                                                                        |
-| `role`            | text        | `patient` or `doctor`. Backend-only (set by the `handle_new_user` trigger from auth `app_metadata`). The mobile app never writes it. |
-| `full_name`       | text        | Name shown to the doctor                                                                                 |
+| `role`            | text        | `patient` or `doctor`, set by the `handle_new_user` trigger. Every signup inserts as `patient`; if `raw_user_meta_data ->> 'signup_source' = 'web'`, a second step calls `make_doctor()` to upgrade the row (sets role, generates `connection_code`, creates `doctor_details`). `raw_user_meta_data` is client-settable, so a mobile client could in principle send `signup_source: 'web'` too, a known gap, already raised with the backend team. Mobile never sends `signup_source`. |
+| `full_name`       | text        | Name shown to the doctor. Sent by mobile as `raw_user_meta_data.full_name` at signup.                   |
 | `email`           | text        | Mirrors the auth user's email                                                                            |
-| `connection_code` | text        | Doctors only (`CHECK`-enforced: present iff `role = 'doctor'`). Mobile never reads or writes it, except that the patient types a doctor's code to connect. |
+| `phone`           | text        | `NOT NULL` as of 2026-10-15 (renamed from `phone_number` the same day). Mobile sends it as `raw_user_meta_data.phone` at signup (register screen requires it). |
+| `connection_code` | text        | Doctors only (`CHECK`-enforced: present iff `role = 'doctor'`). Mobile never reads or writes it, except that the patient types a doctor's code to connect. Now correctly set via `make_doctor()` for `'web'` signups (fixed 2026-10-15; earlier version of the trigger skipped it). |
 | `doctor_id`       | uuid, optional | Set once a patient connects to a doctor (`CHECK`-enforced: only ever set when `role = 'patient'`). |
 | `connected_at`    | timestamptz, optional | Set at the same time as `doctor_id`.                                                            |
 | `created_at`      | timestamptz |                                                                                                           |
 
-A profile is created automatically by a database trigger on signup — the mobile app never inserts into `profiles` directly, only reads/updates it.
+A profile is created automatically by a database trigger on signup. The mobile app never inserts into `profiles` directly, only reads/updates it.
+
+`GRANT SELECT, UPDATE` on `profiles` for `authenticated` landed 2026-10-15 — reading/updating your own profile from mobile works now. Several other tables mobile may eventually touch (`measurements`, `patient_medications`, `medication_logs`, `medicines`) were found with the same missing-grant gap around the same time; confirm each is granted before building against it, don't assume RLS policies existing means the table is reachable.
 
 Role-specific detail lives in a separate table, also auto-created by the same trigger:
 
@@ -468,7 +471,7 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 2. **Measurements without an account:** ~~undecided~~ **Resolved 2026-10-15.** The backend supports anonymous inserts (`patient_id = null`, RLS policy `measurements: insert own or anonymous`), and a `claim_measurements(uuid[])` RPC attaches local-only measurement ids to the account after registration (Section 4). **Still open:** mobile doesn't implement either side of this yet (Section 9 step 4) — that's an implementation task, not a backend question anymore.
 3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.
-5. **Registration method and fields** (email and password assumed; `full_name` required).
+5. ~~Registration method and fields~~ **Resolved 2026-10-15.** Email and password, plus `full_name` and `phone` (both required, since `profiles.phone` is `NOT NULL`). Both are sent via `signUp()`'s `data` map.
 6. **Weekly check reminders:** intended product behavior, not in the contract. Needs a decision before adding a local-notification package.
 7. ~~**Four-second window:**~~ **Resolved 2026-10-10.** Checked against the demo's shipped `dsp_config.json` and golden tests: `dropEdgeS` (3.0 s) + one Welch `segmentS` (4.0 s) need 7.0 s of recording before the pipeline can produce anything, so a 4 s minimum is structurally impossible. The app's minimum recording length is now **8 s**, not 4 s (Section 2, Section 10 step 4). Still open: these values were tuned against the demo's fixed 20–25 s recordings, never validated at 8 s specifically — revisit once real 8–12 s recordings are available.
 8. **Sensor units and timestamps:** confirm on a device, then record here: whether `event.timestamp` is hardware sensor time or arrival time, whether Android 12+ needs `HIGH_SAMPLING_RATE_SENSORS` to reach about 100 Hz on target phones, and the unit of `userAccelerometer` (expected m/s²).

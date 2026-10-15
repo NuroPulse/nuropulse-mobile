@@ -9,19 +9,19 @@ class AuthRemoteDatasource {
 
   final SupabaseClient _client;
 
-  /// `fullName` goes into `raw_user_meta_data`, the only signup field the
-  /// client can set. `role` lives in `raw_app_meta_data`, which signUp()
-  /// has no parameter for at all, so the mobile app structurally cannot set
-  /// it.
+  /// `fullName` and `phoneNumber` go into `raw_user_meta_data`, read by the
+  /// `handle_new_user` trigger to fill `profiles.full_name`/`phone`
+  /// (the latter is `NOT NULL`, so this must always be sent).
   Future<AuthResponse> signUp({
     required String email,
     required String password,
     required String fullName,
+    required String phoneNumber,
   }) {
     return _client.auth.signUp(
       email: email,
       password: password,
-      data: {'full_name': fullName},
+      data: {'full_name': fullName, 'phone': phoneNumber},
     );
   }
 
