@@ -23,4 +23,9 @@ abstract class AuthRepository {
   Future<Profile> login({required String email, required String password});
 
   Future<void> logout();
+
+  /// Re-fetches the signed-in user's profile. [profileChanges] only reacts
+  /// to auth state (sign in/out/refresh), not to a row update like
+  /// connecting to a doctor, so callers refresh explicitly after one.
+  Future<Profile> refreshProfile();
 }

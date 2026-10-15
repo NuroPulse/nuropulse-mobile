@@ -84,6 +84,17 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Re-fetches the current profile, used after connecting to a doctor
+  /// changes `profiles.doctor_id` out from under the cached [Profile].
+  Future<void> refreshProfile() async {
+    try {
+      final profile = await _repository.refreshProfile();
+      emit(AuthState.authenticated(profile));
+    } on Failure catch (failure) {
+      emit(AuthState.failure(failure));
+    }
+  }
+
   @override
   Future<void> close() {
     unawaited(_subscription.cancel());

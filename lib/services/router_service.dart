@@ -4,6 +4,7 @@ import 'package:nuropulse/dsp/models/tremor_result.dart';
 import 'package:nuropulse/features/auth/presentation/pages/login_page.dart';
 import 'package:nuropulse/features/auth/presentation/pages/profile_gate_page.dart';
 import 'package:nuropulse/features/auth/presentation/pages/register_page.dart';
+import 'package:nuropulse/features/connection/presentation/pages/connect_doctor_page.dart';
 import 'package:nuropulse/features/dev/presentation/pages/component_gallery_page.dart';
 import 'package:nuropulse/features/dev/presentation/pages/debug_page.dart';
 import 'package:nuropulse/features/history/presentation/pages/history_page.dart';
@@ -68,6 +69,10 @@ GoRouter createRouter({required OnboardingRepository onboardingRepository}) {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/connect',
+        builder: (context, state) => const ConnectDoctorPage(),
       ),
       GoRoute(
         path: '/measure',

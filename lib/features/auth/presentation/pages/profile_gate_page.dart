@@ -8,9 +8,11 @@ import 'package:nuropulse/core/widgets/main_app_bar.dart';
 import 'package:nuropulse/features/auth/domain/entity/profile.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_state.dart';
+import 'package:nuropulse/features/connection/presentation/cubit/connection_cubit.dart';
+import 'package:nuropulse/features/connection/presentation/cubit/connection_state.dart';
 
-/// Profil tab. Shows Masuk/Daftar when signed out; a minimal signed-in
-/// summary otherwise. The full profile view (editing, connected doctor)
+/// Profil tab. Shows Masuk/Daftar when signed out; a signed-in summary plus
+/// connected-doctor status otherwise. The full profile view (editing)
 /// isn't built yet.
 class ProfileGatePage extends StatelessWidget {
   const ProfileGatePage({super.key});
@@ -75,13 +77,41 @@ class _SignedOut extends StatelessWidget {
   }
 }
 
-class _SignedIn extends StatelessWidget {
+class _SignedIn extends StatefulWidget {
   const _SignedIn({required this.profile});
 
   final Profile profile;
 
   @override
+  State<_SignedIn> createState() => _SignedInState();
+}
+
+class _SignedInState extends State<_SignedIn> {
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctorIfNeeded(null);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SignedIn oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadDoctorIfNeeded(oldWidget.profile.doctorId);
+  }
+
+  // Covers both the first build (previousDoctorId null, meaning "unknown")
+  // and connecting to a doctor later, which updates profile.doctorId
+  // without this widget being recreated.
+  void _loadDoctorIfNeeded(String? previousDoctorId) {
+    final doctorId = widget.profile.doctorId;
+    if (doctorId != null && doctorId != previousDoctorId) {
+      context.read<ConnectionCubit>().loadConnectedDoctor(doctorId);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final profile = widget.profile;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -100,11 +130,10 @@ class _SignedIn extends StatelessWidget {
               style: FontTheme.heading.copyWith(color: BaseColors.ink),
             ),
             const SizedBox(height: 24),
-            Text(
-              profile.id,
-              textAlign: TextAlign.center,
-              style: FontTheme.body.copyWith(color: BaseColors.ink),
-            ),
+            if (profile.doctorId == null)
+              _NotConnected()
+            else
+              const _ConnectedDoctorInfo(),
             const SizedBox(height: 24),
             AppButton(
               label: 'Keluar',
@@ -115,6 +144,79 @@ class _SignedIn extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NotConnected extends StatelessWidget {
+  const _NotConnected();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'Anda belum terhubung dengan dokter.',
+          textAlign: TextAlign.center,
+          style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+        ),
+        const SizedBox(height: 12),
+        AppButton(
+          label: 'Hubungkan dengan Dokter',
+          icon: Icons.link,
+          onPressed: () => context.push('/connect'),
+          fullWidth: true,
+        ),
+      ],
+    );
+  }
+}
+
+class _ConnectedDoctorInfo extends StatelessWidget {
+  const _ConnectedDoctorInfo();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ConnectionCubit, DoctorConnectionState>(
+      builder: (context, state) {
+        return switch (state) {
+          DoctorConnectionConnected(:final doctor) => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: BaseColors.surfaceRaised,
+              border: Border.all(color: BaseColors.line),
+              borderRadius: BorderRadius.circular(12), // radius-md
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Dokter yang terhubung',
+                  style: FontTheme.label.copyWith(color: BaseColors.inkMuted),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  doctor.fullName,
+                  style: FontTheme.bodyLg.copyWith(
+                    color: BaseColors.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          DoctorConnectionFailure() => Text(
+            'Gagal memuat info dokter.',
+            textAlign: TextAlign.center,
+            style: FontTheme.body.copyWith(color: BaseColors.inkMuted),
+          ),
+          _ => const SizedBox(
+            height: 24,
+            width: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        };
+      },
     );
   }
 }

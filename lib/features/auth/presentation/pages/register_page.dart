@@ -12,6 +12,7 @@ import 'package:nuropulse/core/widgets/main_app_bar.dart';
 import 'package:nuropulse/features/auth/presentation/auth_failure_message.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_state.dart';
+import 'package:nuropulse/features/auth/presentation/post_auth_navigation.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -50,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
 
     if (ok) {
-      context.go('/');
+      navigateAfterAuth(context);
       return;
     }
     if (cubit.state is AuthUnauthenticated) {

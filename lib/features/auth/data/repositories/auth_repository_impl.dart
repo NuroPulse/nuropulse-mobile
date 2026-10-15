@@ -92,6 +92,23 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  @override
+  Future<Profile> refreshProfile() async {
+    final userId = _auth.currentUserId;
+    if (userId == null) {
+      throw const AuthFailure('Not signed in');
+    }
+    try {
+      return await _fetchProfile(userId);
+    } catch (error, stackTrace) {
+      if (error is Failure) rethrow;
+      Error.throwWithStackTrace(
+        AuthFailure('Failed to refresh profile: $error'),
+        stackTrace,
+      );
+    }
+  }
+
   /// The app never sets role, but still must refuse a non-patient account
   /// rather than let it stay signed in.
   Future<Profile> _enforcePatientRole(String userId) async {

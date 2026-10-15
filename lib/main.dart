@@ -5,6 +5,8 @@ import 'package:nuropulse/core/environments/env.dart';
 import 'package:nuropulse/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:nuropulse/features/auth/data/datasources/profile_remote_datasource.dart';
 import 'package:nuropulse/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:nuropulse/features/connection/data/datasources/connection_remote_datasource.dart';
+import 'package:nuropulse/features/connection/data/repositories/connection_repository_impl.dart';
 import 'package:nuropulse/features/measure/data/datasources/measurement_local_datasource.dart';
 import 'package:nuropulse/features/measure/data/datasources/sensor_datasource.dart';
 import 'package:nuropulse/features/measure/data/repositories/measurement_repository_impl.dart';
@@ -48,6 +50,9 @@ Future<void> main() async {
     AuthRemoteDatasource(Supabase.instance.client),
     ProfileRemoteDatasource(Supabase.instance.client),
   );
+  final connectionRepository = ConnectionRepositoryImpl(
+    ConnectionRemoteDatasource(Supabase.instance.client),
+  );
 
   runApp(
     App(
@@ -56,6 +61,7 @@ Future<void> main() async {
       dspConfig: dspConfig,
       onboardingRepository: onboardingRepository,
       authRepository: authRepository,
+      connectionRepository: connectionRepository,
       router: createRouter(onboardingRepository: onboardingRepository),
     ),
   );

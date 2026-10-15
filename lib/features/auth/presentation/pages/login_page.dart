@@ -10,6 +10,7 @@ import 'package:nuropulse/core/widgets/main_app_bar.dart';
 import 'package:nuropulse/features/auth/presentation/auth_failure_message.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_state.dart';
+import 'package:nuropulse/features/auth/presentation/post_auth_navigation.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
       email: _email.text.trim(),
       password: _password.text,
     );
-    if (ok && mounted) context.go('/');
+    if (ok && mounted) navigateAfterAuth(context);
   }
 
   @override

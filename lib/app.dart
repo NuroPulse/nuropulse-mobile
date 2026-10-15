@@ -5,6 +5,8 @@ import 'package:nuropulse/core/themes/app_theme.dart';
 import 'package:nuropulse/dsp/dsp_config.dart';
 import 'package:nuropulse/features/auth/domain/repositories/auth_repository.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:nuropulse/features/connection/domain/repositories/connection_repository.dart';
+import 'package:nuropulse/features/connection/presentation/cubit/connection_cubit.dart';
 import 'package:nuropulse/features/measure/domain/repositories/measurement_repository.dart';
 import 'package:nuropulse/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:nuropulse/services/logger_service.dart';
@@ -17,6 +19,7 @@ class App extends StatelessWidget {
     required this.dspConfig,
     required this.onboardingRepository,
     required this.authRepository,
+    required this.connectionRepository,
     required this.router,
   });
 
@@ -25,6 +28,7 @@ class App extends StatelessWidget {
   final DspConfig dspConfig;
   final OnboardingRepository onboardingRepository;
   final AuthRepository authRepository;
+  final ConnectionRepository connectionRepository;
   final GoRouter router;
 
   @override
@@ -39,9 +43,20 @@ class App extends StatelessWidget {
           value: onboardingRepository,
         ),
         RepositoryProvider<AuthRepository>.value(value: authRepository),
+        RepositoryProvider<ConnectionRepository>.value(
+          value: connectionRepository,
+        ),
       ],
-      child: BlocProvider(
-        create: (context) => AuthCubit(context.read<AuthRepository>()),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => AuthCubit(context.read<AuthRepository>()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                ConnectionCubit(context.read<ConnectionRepository>()),
+          ),
+        ],
         child: MaterialApp.router(
           title: 'NuroPulse',
           theme: AppTheme.light,
