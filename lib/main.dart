@@ -10,6 +10,8 @@ import 'package:nuropulse/features/connection/data/repositories/connection_repos
 import 'package:nuropulse/features/measure/data/datasources/measurement_local_datasource.dart';
 import 'package:nuropulse/features/measure/data/datasources/sensor_datasource.dart';
 import 'package:nuropulse/features/measure/data/repositories/measurement_repository_impl.dart';
+import 'package:nuropulse/features/medication/data/datasources/medication_remote_datasource.dart';
+import 'package:nuropulse/features/medication/data/repositories/medication_repository_impl.dart';
 import 'package:nuropulse/features/onboarding/data/datasources/onboarding_local_datasource.dart';
 import 'package:nuropulse/features/onboarding/data/repositories/onboarding_repository_impl.dart';
 import 'package:nuropulse/services/dsp_config_loader.dart';
@@ -53,6 +55,9 @@ Future<void> main() async {
   final connectionRepository = ConnectionRepositoryImpl(
     ConnectionRemoteDatasource(Supabase.instance.client),
   );
+  final medicationRepository = MedicationRepositoryImpl(
+    MedicationRemoteDatasource(Supabase.instance.client),
+  );
 
   runApp(
     App(
@@ -62,6 +67,7 @@ Future<void> main() async {
       onboardingRepository: onboardingRepository,
       authRepository: authRepository,
       connectionRepository: connectionRepository,
+      medicationRepository: medicationRepository,
       router: createRouter(onboardingRepository: onboardingRepository),
     ),
   );

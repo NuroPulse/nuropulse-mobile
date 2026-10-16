@@ -4,6 +4,7 @@ part 'storage_failure.dart';
 part 'network_failure.dart';
 part 'auth_failure.dart';
 part 'connection_code_failure.dart';
+part 'medication_failure.dart';
 
 /// Failures thrown by repositories and caught by Cubits.
 ///

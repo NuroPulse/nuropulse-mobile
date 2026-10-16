@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuropulse/dsp/models/tremor_result.dart';
 import 'package:nuropulse/features/auth/presentation/pages/login_page.dart';
@@ -9,10 +8,10 @@ import 'package:nuropulse/features/dev/presentation/pages/component_gallery_page
 import 'package:nuropulse/features/dev/presentation/pages/debug_page.dart';
 import 'package:nuropulse/features/history/presentation/pages/history_page.dart';
 import 'package:nuropulse/features/home/presentation/pages/home_page.dart';
-import 'package:nuropulse/features/home/presentation/pages/home_placeholder_page.dart';
 import 'package:nuropulse/features/home/presentation/pages/home_shell_page.dart';
 import 'package:nuropulse/features/measure/presentation/pages/measure_detail_page.dart';
 import 'package:nuropulse/features/measure/presentation/pages/measure_page.dart';
+import 'package:nuropulse/features/medication/presentation/pages/medication_page.dart';
 import 'package:nuropulse/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:nuropulse/features/onboarding/presentation/pages/onboarding_page.dart';
 
@@ -39,11 +38,7 @@ GoRouter createRouter({required OnboardingRepository onboardingRepository}) {
             routes: [
               GoRoute(
                 path: '/medication',
-                builder: (context, state) => const HomePlaceholderPage(
-                  icon: Icons.medication_outlined,
-                  title: 'Obat',
-                  message: 'Jadwal dan catatan obat akan hadir di sini.',
-                ),
+                builder: (context, state) => const MedicationPage(),
               ),
             ],
           ),

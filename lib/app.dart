@@ -8,6 +8,7 @@ import 'package:nuropulse/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:nuropulse/features/connection/domain/repositories/connection_repository.dart';
 import 'package:nuropulse/features/connection/presentation/cubit/connection_cubit.dart';
 import 'package:nuropulse/features/measure/domain/repositories/measurement_repository.dart';
+import 'package:nuropulse/features/medication/domain/repositories/medication_repository.dart';
 import 'package:nuropulse/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:nuropulse/services/logger_service.dart';
 
@@ -20,6 +21,7 @@ class App extends StatelessWidget {
     required this.onboardingRepository,
     required this.authRepository,
     required this.connectionRepository,
+    required this.medicationRepository,
     required this.router,
   });
 
@@ -29,6 +31,7 @@ class App extends StatelessWidget {
   final OnboardingRepository onboardingRepository;
   final AuthRepository authRepository;
   final ConnectionRepository connectionRepository;
+  final MedicationRepository medicationRepository;
   final GoRouter router;
 
   @override
@@ -45,6 +48,9 @@ class App extends StatelessWidget {
         RepositoryProvider<AuthRepository>.value(value: authRepository),
         RepositoryProvider<ConnectionRepository>.value(
           value: connectionRepository,
+        ),
+        RepositoryProvider<MedicationRepository>.value(
+          value: medicationRepository,
         ),
       ],
       child: MultiBlocProvider(

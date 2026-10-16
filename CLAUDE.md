@@ -32,7 +32,7 @@ The actual deployed schema (tables, columns, RLS policies, functions) can be rea
 | Account registration and login  | Role is always `patient` on mobile.                                                                                               |
 | Connect to a doctor             | The patient enters the doctor's personal connection code. A patient connects to **one** doctor.                                   |
 | Measurement history             | List of past checks with their status.                                                                                            |
-| Medication schedule and log     | **Schema now exists in Supabase** (`medicines`, `medication_schedules`, `patient_medications`, `medication_logs` — see Section 4). Not yet buildable: two of those tables have no working RLS policies yet. Confirm with the backend before starting (Section 13 item 1). |
+| Medication schedule and log     | Mobile side built: read the schedule (`patient_medications`), log a dose (`medication_logs`). Blocked on the backend until `patient_medications`/`medication_logs`/`medicines` get their `GRANT SELECT`/`INSERT` for `authenticated` (Section 13 item 1) — not yet confirmed done. |
 
 ### Limits (don't state this in code or UI)
 
@@ -232,7 +232,10 @@ lib/
 │   │   ├── data/ ...
 │   │   ├── domain/ ...
 │   │   └── presentation/ ...
-│   └── medication/                 # PLANNED. Create only after its data contract exists.
+│   └── medication/                 # Read the prescribed schedule, log doses. No create/edit: schedules are doctor-only
+│       ├── data/ ...
+│       ├── domain/ ...
+│       └── presentation/ ...
 │
 └── services/
     ├── storage/                    # HiveService (measurements box + settings box), SecureStorageService
@@ -467,7 +470,7 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 
 ## 13. Open items (do not guess; ask or follow the backend)
 
-1. **Medication schedule and log:** ~~no data contract yet~~ **Partially resolved 2026-10-15.** The schema exists (`medicines`, `medication_schedules`, `patient_medications`, `medication_logs` — Section 4). Still open: `medicines` and `medication_schedules` have no working RLS policies (unusable as-is), and `medication_schedules` has a likely bug (FK columns defaulting to `gen_random_uuid()`). `patient_medications` + `medication_logs` look usable. Confirm the `medicines`/`medication_schedules` gaps with the backend before building the `medication` feature folder.
+1. **Medication schedule and log:** ~~no data contract yet~~ Mobile built 2026-10-16 (`features/medication/`): reads `patient_medications` (joined with `medicines` for the name) and writes `medication_logs`. `medication_schedules` is still not used, has no RLS and a likely bug (FK columns defaulting to `gen_random_uuid()`). **Still open, blocking:** as of this migration history, `patient_medications`/`medication_logs`/`medicines` have never had `GRANT SELECT`/`INSERT`/`UPDATE` added for `authenticated` (checked every migration since 2026-10-14; only `profiles` got fixed, 2026-10-15). Every query here will fail with `permission denied` (same as the `profiles` issue) until that grant is added. Confirm it's been run before relying on this feature working.
 2. **Measurements without an account:** ~~undecided~~ **Resolved 2026-10-15.** The backend supports anonymous inserts (`patient_id = null`, RLS policy `measurements: insert own or anonymous`), and a `claim_measurements(uuid[])` RPC attaches local-only measurement ids to the account after registration (Section 4). **Still open:** mobile doesn't implement either side of this yet (Section 9 step 4) — that's an implementation task, not a backend question anymore.
 3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.
