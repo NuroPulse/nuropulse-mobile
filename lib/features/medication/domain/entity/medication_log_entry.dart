@@ -4,15 +4,19 @@ import 'package:nuropulse/features/medication/domain/entity/medication_log_statu
 class MedicationLogEntry {
   const MedicationLogEntry({
     required this.id,
-    required this.patientMedicationId,
     required this.scheduledAt,
     required this.status,
     required this.loggedAt,
+    this.scheduleId,
     this.takenAt,
   });
 
   final String id;
-  final String patientMedicationId;
+
+  /// Null if the schedule it was logged against was later deleted
+  /// (`ON DELETE SET NULL`).
+  final String? scheduleId;
+
   final DateTime scheduledAt;
   final MedicationLogStatus status;
   final DateTime loggedAt;

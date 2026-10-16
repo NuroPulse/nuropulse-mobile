@@ -1,4 +1,4 @@
-/// One prescribed medication, from `patient_medications` joined with
+/// One prescribed medication, from `medication_schedules` joined with
 /// `medicines` for the name. Mobile only reads this: schedules are created
 /// by a doctor from the dashboard.
 class MedicationSchedule {
@@ -10,18 +10,18 @@ class MedicationSchedule {
     required this.startDate,
     required this.isActive,
     this.endDate,
-    this.notes,
+    this.instructions,
   });
 
   final String id;
   final String medicineName;
   final String dose;
 
-  /// "HH:mm", one per dose per day.
+  /// One per dose per day, whatever text format the doctor entered.
   final List<String> scheduleTimes;
 
   final DateTime startDate;
   final DateTime? endDate;
   final bool isActive;
-  final String? notes;
+  final String? instructions;
 }

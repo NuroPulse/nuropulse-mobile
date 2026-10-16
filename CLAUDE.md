@@ -32,7 +32,7 @@ The actual deployed schema (tables, columns, RLS policies, functions) can be rea
 | Account registration and login  | Role is always `patient` on mobile.                                                                                               |
 | Connect to a doctor             | The patient enters the doctor's personal connection code. A patient connects to **one** doctor.                                   |
 | Measurement history             | List of past checks with their status.                                                                                            |
-| Medication schedule and log     | Mobile side built: read the schedule (`patient_medications`), log a dose (`medication_logs`). Blocked on the backend until `patient_medications`/`medication_logs`/`medicines` get their `GRANT SELECT`/`INSERT` for `authenticated` (Section 13 item 1) — not yet confirmed done. |
+| Medication schedule and log     | Mobile side built: read the schedule (`medication_schedules`), log current status per dose (`medication_logs`, upsert — Section 4, Section 13 item 1). |
 
 ### Limits (don't state this in code or UI)
 
@@ -100,15 +100,22 @@ Role-specific detail lives in a separate table, also auto-created by the same tr
 
 ### patient_details (one row per patient profile)
 
-| Column           | Type        | Notes                        |
-| ---------------- | ----------- | ----------------------------- |
-| `id`             | uuid        | = `profiles.id`               |
-| `date_of_birth`  | date, optional |                             |
-| `gender`         | text, optional | `male` or `female`         |
-| `phone`          | text, optional |                             |
-| `email`          | text, optional | Set from the auth email on creation |
-| `diagnosis`      | text, optional | Not currently surfaced anywhere in this app — do not add UI for it without asking |
-| `updated_at`     | timestamptz |                                |
+> **Known bug, likely breaks every new signup (found 2026-10-16, not yet fixed):** this table's `full_name` column is `NOT NULL` with no default, but the `handle_new_user` trigger's insert (`insert into patient_details (id, phone, email, updated_at) values (...)`) never sets it. Every non-`'web'` signup should fail with a not-null violation on this column until the backend either adds `full_name` to that insert or gives the column a default. Confirm this is fixed before relying on registration working.
+
+| Column                    | Type        | Notes                        |
+| -------------------------- | ----------- | ----------------------------- |
+| `id`                      | uuid        | = `profiles.id`               |
+| `full_name`               | text        | `NOT NULL` as of 2026-10-16. See the bug note above — the trigger doesn't set this. |
+| `phone`                   | text, optional |                             |
+| `email`                   | text, optional | Set from the auth email on creation |
+| `doctor_id`               | uuid, optional | Added 2026-10-16, FK to `doctor_details`. Defaults to `gen_random_uuid()` like `medication_schedules`'s FK columns (Section 4 Medication) — the same likely-bug pattern; don't trust a row where this looks set unless you know it was written explicitly. |
+| `connected_at`            | timestamptz, optional | Added 2026-10-16, duplicates `profiles.connected_at`. |
+| `last_measured_at`        | timestamptz, optional | Added 2026-10-16, replaces the dropped `patient_overview` view. |
+| `last_measurement_status` | text, optional | Added 2026-10-16. |
+| `last_peak_frequency_hz`  | numeric, optional | Added 2026-10-16. |
+| `updated_at`              | timestamptz |                                |
+
+`date_of_birth`, `gender`, and `diagnosis` were dropped 2026-10-16 (were previously documented here as optional/unused fields).
 
 ### doctor_details (doctor dashboard only)
 
@@ -149,14 +156,19 @@ JSON keys use `snake_case` exactly as above. Dart fields use `camelCase` and map
 | `connect_to_doctor(p_code)`     | patient       | Validates a doctor's connection code, sets `profiles.doctor_id`/`connected_at`. Raises with Postgres error code `P0002` on an invalid code — map that to `ConnectionCodeFailure` in `ConnectionRepository`. |
 | `claim_measurements(uuid[])`    | patient       | Attaches the given local measurement ids to the now-logged-in account (`patient_id = auth.uid()`), but only rows where `patient_id` is still null. Call this right after registration/login with any ids saved while logged out. |
 
-### Medication (schema exists; mobile feature not built — Section 13 item 1)
+### Medication (mobile built 2026-10-16, `features/medication/`)
+
+`patient_medications` (the table this was originally built against) was dropped 2026-10-16. `medication_schedules` is now the real table — its grants and one broken FK were fixed the same day.
 
 | Table                 | Purpose                                                                                      |
 | ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `medicines`             | Shared catalog: `name`, `common_dosage`, `notes`. **No working RLS policy yet** — currently unreadable/unwritable by `anon`/`authenticated`. |
-| `medication_schedules`  | Looks superseded by `patient_medications` below — has no RLS policies either, and its `patient_id`/`doctor_id`/`medicine_id` columns default to `gen_random_uuid()`, which looks like a bug (a foreign key should never silently default to a random id). Do not build against this table without confirming with the backend first. |
-| `patient_medications`   | The one that actually works: `patient_id`, `medicine_id`, `dose`, `schedule_times` (array of `time`), `start_date`/`end_date`, `is_active`, `prescribed_by` (doctor). RLS: patient reads own; doctor has full access to their own patients' rows. |
-| `medication_logs`       | One row per dose taken/skipped: `patient_medication_id`, `scheduled_at`, `status` (default `taken`), `taken_at`, `patient_id`. RLS: patient reads/writes own; doctor reads their patients'. |
+| `medicines`             | Shared catalog: `name`, `common_dosage`, `created_by` (doctor, FK now correctly points to `doctor_details`, was self-referential and broken before 2026-10-16), `created_by_name`. `GRANT SELECT` to `authenticated` landed 2026-10-16 — readable now. |
+| `medication_schedules`  | `id`, `patient_id`, `doctor_id`, `medicine_id`, `dose`, `times` (`text[]`, changed from a typed array 2026-10-16), `start_date`/`end_date`, `instructions`, `is_active`. Grants fixed 2026-10-16 (`SELECT`/`INSERT`/`UPDATE` for `authenticated`). **Two things to know before building against it:** (1) its `SELECT` policy is `TO PUBLIC USING (true)` — not scoped to the signed-in patient at all, so the mobile datasource filters by `patient_id` client-side instead of trusting RLS, unlike every other table here. (2) `patient_id`/`doctor_id`/`medicine_id` still default to `gen_random_uuid()` if not supplied on insert (same bug class as `patient_details.doctor_id` above) — not a mobile concern since mobile never writes this table, but a real risk for whatever does. |
+| `medication_logs`       | `schedule_id` (FK to `medication_schedules`, replaces the dropped `patient_medication_id` 2026-10-16, **`UNIQUE`**), `scheduled_at`, `status` (default `taken`), `taken_at`, `logged_at`, `uploaded_at` (no trigger sets this — mobile must, unlike `measurements.uploaded_at`), `patient_id` (defaults to `auth.uid()`). RLS: patient reads/writes own; doctor reads their patients'. |
+
+The `UNIQUE` constraint on `schedule_id` means at most one `medication_logs` row can ever exist per schedule — decided 2026-10-16 to treat this as the backend's actual design rather than a bug to request a fix for: a schedule's log is its **current status**, not a per-dose history. Mobile logs with `upsert(..., onConflict: 'schedule_id')`, not `insert`, always sending every field explicitly (an omitted `taken_at` would otherwise survive stale from a previous `taken` row after switching to `skipped`). `MedicationPage`'s "Status Terkini" section reflects this: it shows the latest logged status per medicine, not a dose-by-dose log.
+
+Mobile is read-only for schedules. Creating/editing one is meant to be doctor-only, but `medication_schedules`'s `INSERT`/`UPDATE` policies currently allow any authenticated user (`WITH CHECK (true)` / `USING (true)`), not just doctors — this app simply chooses never to write one, RLS doesn't actually enforce that restriction right now.
 
 ### Doctor dashboard only — exists, not consumed by this app
 
@@ -470,7 +482,7 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 
 ## 13. Open items (do not guess; ask or follow the backend)
 
-1. **Medication schedule and log:** ~~no data contract yet~~ Mobile built 2026-10-16 (`features/medication/`): reads `patient_medications` (joined with `medicines` for the name) and writes `medication_logs`. `medication_schedules` is still not used, has no RLS and a likely bug (FK columns defaulting to `gen_random_uuid()`). **Still open, blocking:** as of this migration history, `patient_medications`/`medication_logs`/`medicines` have never had `GRANT SELECT`/`INSERT`/`UPDATE` added for `authenticated` (checked every migration since 2026-10-14; only `profiles` got fixed, 2026-10-15). Every query here will fail with `permission denied` (same as the `profiles` issue) until that grant is added. Confirm it's been run before relying on this feature working.
+1. **Medication schedule and log:** ~~no data contract yet~~ Mobile built, rebuilt 2026-10-16 against `medication_schedules` after `patient_medications` (the table it was first built against) was dropped the same day. Grants for `medication_schedules`/`medication_logs`/`medicines` landed in that same migration. ~~`medication_logs.schedule_id`'s `UNIQUE` constraint blocks a second log~~ **Resolved 2026-10-16.** Decided to follow the backend's constraint rather than ask for a schema change: a schedule has one current logged status, not a dose history. Mobile logs via upsert on `schedule_id` (Section 4). Also see the `patient_details.full_name` NOT NULL bug noted in Section 4, found the same day — unrelated to medication but found while reading the same migration, and more urgent since it likely blocks registration entirely.
 2. **Measurements without an account:** ~~undecided~~ **Resolved 2026-10-15.** The backend supports anonymous inserts (`patient_id = null`, RLS policy `measurements: insert own or anonymous`), and a `claim_measurements(uuid[])` RPC attaches local-only measurement ids to the account after registration (Section 4). **Still open:** mobile doesn't implement either side of this yet (Section 9 step 4) — that's an implementation task, not a backend question anymore.
 3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.

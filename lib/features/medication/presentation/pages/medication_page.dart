@@ -17,8 +17,11 @@ import 'package:nuropulse/features/medication/presentation/cubit/medication_cubi
 import 'package:nuropulse/features/medication/presentation/cubit/medication_state.dart';
 
 /// Obat tab: the signed-in patient's doctor-prescribed schedule, with a way
-/// to log a dose, plus recent log history. Signed out shows a login prompt
-/// instead, since every query here is scoped to the signed-in patient.
+/// to mark each one taken or skipped. Not a dose history: `medication_logs`
+/// holds at most one row per schedule, so this shows the latest logged
+/// status per medicine, not every past dose. Signed out shows a login
+/// prompt instead, since every query here is scoped to the signed-in
+/// patient.
 class MedicationPage extends StatelessWidget {
   const MedicationPage({super.key});
 
@@ -134,7 +137,7 @@ class _MedicationContentState extends State<_MedicationContent> {
                   ],
                 const SizedBox(height: 28),
                 Text(
-                  'Riwayat',
+                  'Status Terkini',
                   style: FontTheme.heading.copyWith(color: BaseColors.ink),
                 ),
                 const SizedBox(height: 12),
@@ -308,7 +311,7 @@ class _LogTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  formatDateTime(log.scheduledAt),
+                  'Terakhir dicatat: ${formatDateTime(log.loggedAt)}',
                   style: FontTheme.caption.copyWith(color: BaseColors.inkMuted),
                 ),
               ],
