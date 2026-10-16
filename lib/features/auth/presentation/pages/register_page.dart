@@ -14,6 +14,11 @@ import 'package:nuropulse/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_state.dart';
 import 'package:nuropulse/features/auth/presentation/post_auth_navigation.dart';
 
+/// Accepts 08xx (local), 628xx, or +628xx. Matches what [whatsappUri] in
+/// core/utils/whatsapp.dart can normalize, since every phone number in this
+/// app doubles as a WhatsApp number.
+final _phoneFormat = RegExp(r'^(?:\+62|62|0)8[0-9]{7,11}$');
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -159,10 +164,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.next,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                    ],
+                    hint: 'Contoh: 08xx, 628xx, atau +628xx',
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.isEmpty) {
                         return 'Nomor telepon wajib diisi';
+                      }
+                      if (!_phoneFormat.hasMatch(trimmed)) {
+                        return 'Format nomor tidak dikenali (08xx, 628xx, atau +628xx)';
                       }
                       return null;
                     },
