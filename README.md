@@ -24,6 +24,10 @@ flutter run                                                 # physical Android d
 
 `.env` is git-ignored; `flutter_dotenv` loads it at startup (`core/environments/env.dart`) before `Supabase.initialize()` runs. Without it, the app fails fast with a clear error rather than silently misconfiguring Supabase.
 
+## Video Demo
+
+https://github.com/user-attachments/assets/3ffc8dac-c346-4897-8544-6caec1f6fd23
+
 ## DSP pipeline
 
 `lib/dsp/` is pure Dart (no Flutter, no I/O) and deterministic: the same `DspInput` always produces the same `TremorResult`. `TremorPipeline.analyze()` in [`lib/dsp/tremor_pipeline.dart`](./lib/dsp/tremor_pipeline.dart) orchestrates the stages below in order; any gate failure short-circuits straight to an `invalid` result instead of running the remaining stages.
