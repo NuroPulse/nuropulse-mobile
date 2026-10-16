@@ -23,4 +23,18 @@ abstract class MeasurementRepository {
 
   /// All saved measurements, most recent first. Throws [StorageFailure].
   Future<List<MeasurementRecord>> getMeasurements();
+
+  /// Retries uploading every locally-saved measurement still marked
+  /// `uploaded = false`. If the user is now signed in and a measurement was
+  /// saved while signed out, it uploads under the current account instead
+  /// of staying anonymous. Never throws; failures just stay pending for the
+  /// next retry (CLAUDE.md section 9 step 4). Call at app start and after
+  /// login.
+  Future<void> retryPendingUploads();
+
+  /// Attaches measurements that already uploaded anonymously (before this
+  /// account existed) to the now signed-in account, via `claim_measurements`
+  /// (CLAUDE.md section 4). Never throws. Call once right after login or
+  /// registration succeeds.
+  Future<void> claimAnonymousMeasurements();
 }

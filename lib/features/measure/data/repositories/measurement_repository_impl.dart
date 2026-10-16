@@ -11,6 +11,7 @@ import 'package:nuropulse/dsp/models/tremor_result.dart';
 import 'package:nuropulse/dsp/models/tremor_status.dart';
 import 'package:nuropulse/dsp/tremor_pipeline.dart';
 import 'package:nuropulse/features/measure/data/datasources/measurement_local_datasource.dart';
+import 'package:nuropulse/features/measure/data/datasources/measurement_remote_datasource.dart';
 import 'package:nuropulse/features/measure/data/datasources/sensor_datasource.dart';
 import 'package:nuropulse/features/measure/data/models/device_model.dart';
 import 'package:nuropulse/features/measure/data/models/measurement_model.dart';
@@ -26,12 +27,14 @@ class MeasurementRepositoryImpl implements MeasurementRepository {
   MeasurementRepositoryImpl(
     this._sensors,
     this._local,
+    this._remote,
     this._dspConfig, [
     Uuid? uuid,
   ]) : _uuid = uuid ?? const Uuid();
 
   final SensorDatasource _sensors;
   final MeasurementLocalDatasource _local;
+  final MeasurementRemoteDatasource _remote;
   final DspConfig _dspConfig;
   final Uuid _uuid;
 
@@ -95,9 +98,6 @@ class MeasurementRepositoryImpl implements MeasurementRepository {
     final model = await _buildModel(id, result);
 
     try {
-      // Not uploaded yet: no backend/auth is wired up (CLAUDE.md section 13
-      // items 2 and 5 are still open, and supabase_flutter isn't a
-      // dependency yet). Stays local with uploaded = false until that lands.
       await _local.save(id, model.toJson(), uploaded: false);
     } catch (error, stackTrace) {
       Error.throwWithStackTrace(
@@ -106,7 +106,67 @@ class MeasurementRepositoryImpl implements MeasurementRepository {
       );
     }
 
+    // A failed upload is not a failure of the check itself: the result
+    // stays local with uploaded = false and retries later (CLAUDE.md
+    // section 9 step 4), covering both offline and the `anon` role still
+    // missing an INSERT grant on `measurements`.
+    try {
+      await _remote.upload(model.toJson());
+      await _local.save(id, model.toJson(), uploaded: true);
+    } catch (_) {
+      // Left pending; retryPendingUploads() picks it up later.
+    }
+
     return MeasureOutcome(measurementId: id, result: result);
+  }
+
+  @override
+  Future<void> retryPendingUploads() async {
+    final userId = _remote.currentUserId;
+    for (final entry in _local.readAll()) {
+      if (entry['uploaded'] == true) continue;
+      var model = MeasurementModel.fromJson(
+        entry['measurement'] as Map<String, dynamic>,
+      );
+      // Never uploaded before, so there is no anonymous row to orphan:
+      // attribute it to the account that is signed in now.
+      if (userId != null && model.patientId == null) {
+        model = model.copyWith(patientId: userId);
+      }
+      try {
+        await _remote.upload(model.toJson());
+        await _local.save(model.id, model.toJson(), uploaded: true);
+      } catch (_) {
+        // Stays pending for the next retry.
+      }
+    }
+  }
+
+  @override
+  Future<void> claimAnonymousMeasurements() async {
+    final userId = _remote.currentUserId;
+    if (userId == null) return;
+
+    final toClaim = <MeasurementModel>[];
+    for (final entry in _local.readAll()) {
+      if (entry['uploaded'] != true) continue;
+      final model = MeasurementModel.fromJson(
+        entry['measurement'] as Map<String, dynamic>,
+      );
+      if (model.patientId == null) toClaim.add(model);
+    }
+    if (toClaim.isEmpty) return;
+
+    try {
+      await _remote.claim([for (final model in toClaim) model.id]);
+      for (final model in toClaim) {
+        final claimed = model.copyWith(patientId: userId);
+        await _local.save(claimed.id, claimed.toJson(), uploaded: true);
+      }
+    } catch (_) {
+      // Retried on the next login; the RPC is a no-op for already-claimed
+      // ids, so re-attempting is harmless.
+    }
   }
 
   @override
@@ -166,6 +226,7 @@ class MeasurementRepositoryImpl implements MeasurementRepository {
       result: result,
       algoVersion: _dspConfig.algoVersion,
       device: await _deviceModel(result.qc.effectiveFsHz),
+      patientId: _remote.currentUserId,
     );
   }
 

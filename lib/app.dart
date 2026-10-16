@@ -56,7 +56,10 @@ class App extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => AuthCubit(context.read<AuthRepository>()),
+            create: (context) => AuthCubit(
+              context.read<AuthRepository>(),
+              context.read<MeasurementRepository>(),
+            ),
           ),
           BlocProvider(
             create: (context) =>

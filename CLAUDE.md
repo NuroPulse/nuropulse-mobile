@@ -94,7 +94,7 @@ Kept in sync with the live Supabase schema (`supabase/migrations/*.sql`, see Sec
 
 A profile is created automatically by a database trigger on signup. The mobile app never inserts into `profiles` directly, only reads/updates it.
 
-`GRANT SELECT, UPDATE` on `profiles` for `authenticated` landed 2026-10-15 — reading/updating your own profile from mobile works now. Several other tables mobile may eventually touch (`measurements`, `patient_medications`, `medication_logs`, `medicines`) were found with the same missing-grant gap around the same time; confirm each is granted before building against it, don't assume RLS policies existing means the table is reachable.
+`GRANT SELECT, UPDATE` on `profiles` for `authenticated` landed 2026-10-15 — reading/updating your own profile from mobile works now. Several other tables mobile may eventually touch (`measurements`, `patient_medications`, `medication_logs`, `medicines`) were found with the same missing-grant gap around the same time; confirm each is granted before building against it, don't assume RLS policies existing means the table is reachable. `measurements` got `INSERT`/`SELECT` for `authenticated` 2026-10-16, but `anon` still has neither (Section 9, Section 13 item 2) — only a signed-in upload actually reaches the table right now.
 
 Role-specific detail lives in a separate table, also auto-created by the same trigger:
 
@@ -384,11 +384,15 @@ Result and recommendation text must **never** say or imply a diagnosis (no "Anda
 
 ### Saving and uploading a measurement
 
-1. After analysis, build the measurement (Section 4) with a new uuid v4, then save it to Hive **before** showing the result.
-2. If logged in, set `patient_id`. Then upload through `MeasurementRepository`. If upload fails (offline, server error), keep the item with `uploaded = false` and retry later (app start, login, connectivity regained).
-3. Re-sending must never create duplicates: the same `id` is sent every time.
-4. If not logged in: the backend confirms uploading with no `patient_id` is supported (RLS allows anonymous insert — Section 4, Section 13 item 2). **Mobile does not implement this yet** — `MeasurementRepositoryImpl` currently always keeps unauthenticated measurements local-only. Implementing the upload-while-logged-out path, and calling `claim_measurements` after the user registers, is still open work.
+Implemented 2026-10-16 in `MeasurementRepositoryImpl`.
+
+1. After analysis, build the measurement (Section 4) with a new uuid v4, save it to Hive **before** showing the result, then attempt one upload via `MeasurementRemoteDatasource.upload` (`upsert` on `id`).
+2. `patient_id` is set from the signed-in user if there is one, else omitted (anonymous). Upload failure (offline, missing `anon` grant, server error) never throws: the item stays with `uploaded = false` and is retried by `retryPendingUploads()`, called at app start (`main.dart`) and right after login/registration succeeds (`AuthCubit._syncMeasurements`). There is no connectivity-regained trigger yet; adding one needs a connectivity package decision (Section 5, not yet approved).
+3. Re-sending never creates duplicates: the same `id` is sent every time via `upsert`, not `insert`.
+4. A measurement saved while signed out stays anonymous until either (a) it hasn't uploaded yet by the time the user signs in, in which case `retryPendingUploads()` attributes it to the now-known account on its first successful upload, or (b) it already uploaded anonymously, in which case `claimAnonymousMeasurements()` calls `claim_measurements` right after login to reattach it server-side.
 5. `uploaded_at` is never set by the app.
+
+**Known gap:** the `anon` role was never granted `INSERT` on `measurements` (only `authenticated` was fixed, 2026-10-16 — Section 4). The RLS policy `measurements: insert own or anonymous` explicitly allows an anonymous insert, but the table grant blocks it regardless. A check made with no account will fail to upload until this grant lands; it just stays queued, which is the same code path as being offline, so nothing crashes, but recommend confirming this grant with the backend.
 
 ### Auth
 
@@ -483,7 +487,7 @@ idle | countdown(secondsLeft) | recording(elapsed, liveWindow) | processing
 ## 13. Open items (do not guess; ask or follow the backend)
 
 1. **Medication schedule and log:** ~~no data contract yet~~ Mobile built, rebuilt 2026-10-16 against `medication_schedules` after `patient_medications` (the table it was first built against) was dropped the same day. Grants for `medication_schedules`/`medication_logs`/`medicines` landed in that same migration. ~~`medication_logs.schedule_id`'s `UNIQUE` constraint blocks a second log~~ **Resolved 2026-10-16.** Decided to follow the backend's constraint rather than ask for a schema change: a schedule has one current logged status, not a dose history. Mobile logs via upsert on `schedule_id` (Section 4). Also see the `patient_details.full_name` NOT NULL bug noted in Section 4, found the same day — unrelated to medication but found while reading the same migration, and more urgent since it likely blocks registration entirely.
-2. **Measurements without an account:** ~~undecided~~ **Resolved 2026-10-15.** The backend supports anonymous inserts (`patient_id = null`, RLS policy `measurements: insert own or anonymous`), and a `claim_measurements(uuid[])` RPC attaches local-only measurement ids to the account after registration (Section 4). **Still open:** mobile doesn't implement either side of this yet (Section 9 step 4) — that's an implementation task, not a backend question anymore.
+2. **Measurements without an account:** ~~undecided~~ **Resolved 2026-10-15, mobile implemented 2026-10-16.** The backend supports anonymous inserts (`patient_id = null`, RLS policy `measurements: insert own or anonymous`), and a `claim_measurements(uuid[])` RPC attaches local-only measurement ids to the account after registration (Section 4, Section 9). **Still open:** the `anon` role was never granted `INSERT` on `measurements` (Section 9), so an anonymous check's upload will keep failing and staying queued until that grant lands. Also unconfirmed: whether `authenticated` has `UPDATE` on `measurements` — `upsert`'s `ON CONFLICT DO UPDATE` needs it if a retry ever hits a row that did make it to the server after all; only `INSERT`/`SELECT` were confirmed granted 2026-10-16.
 3. **`invalid_reason` values:** the contract says "see below" but the list is not written. Until confirmed, use `low_sampling_rate`, `sampling_gap`, `voluntary_movement`, `clipping`, `high_noise`, `too_short`, plus two the mobile app needed and the backend hasn't seen yet: `flat_signal` (constant/all-zero signal — dead sensor or missing recording; `GateCheck.flatSignal` had no listed string) and `interrupted` (app left the foreground mid-recording — never reaches the DSP gates at all).
 4. **`device` object:** not written out in the contract. Until confirmed, send `model`, `os` (`android` or `ios`), `app_version`, `effective_sampling_hz`.
 5. ~~Registration method and fields~~ **Resolved 2026-10-15.** Email and password, plus `full_name` and `phone` (both required, since `profiles.phone` is `NOT NULL`). Both are sent via `signUp()`'s `data` map.

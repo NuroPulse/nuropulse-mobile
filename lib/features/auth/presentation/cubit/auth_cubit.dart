@@ -5,9 +5,11 @@ import 'package:nuropulse/core/errors/failure.dart';
 import 'package:nuropulse/features/auth/domain/entity/profile.dart';
 import 'package:nuropulse/features/auth/domain/repositories/auth_repository.dart';
 import 'package:nuropulse/features/auth/presentation/cubit/auth_state.dart';
+import 'package:nuropulse/features/measure/domain/repositories/measurement_repository.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit(this._repository) : super(const AuthState.unauthenticated()) {
+  AuthCubit(this._repository, this._measurements)
+    : super(const AuthState.unauthenticated()) {
     _subscription = _repository.profileChanges.listen(
       _onProfileChanged,
       onError: _onProfileError,
@@ -15,7 +17,16 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   final AuthRepository _repository;
+  final MeasurementRepository _measurements;
   late final StreamSubscription<Profile?> _subscription;
+
+  /// Attaches measurements made while signed out to the account that just
+  /// signed in (CLAUDE.md section 9 step 4). Fire-and-forget: neither
+  /// method throws, and a failure here must never block login/registration.
+  void _syncMeasurements() {
+    unawaited(_measurements.claimAnonymousMeasurements());
+    unawaited(_measurements.retryPendingUploads());
+  }
 
   void _onProfileChanged(Profile? profile) {
     emit(
@@ -57,6 +68,7 @@ class AuthCubit extends Cubit<AuthState> {
         return false;
       }
       emit(AuthState.authenticated(profile));
+      _syncMeasurements();
       return true;
     } on Failure catch (failure) {
       emit(AuthState.failure(failure));
@@ -69,6 +81,7 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final profile = await _repository.login(email: email, password: password);
       emit(AuthState.authenticated(profile));
+      _syncMeasurements();
       return true;
     } on Failure catch (failure) {
       emit(AuthState.failure(failure));
