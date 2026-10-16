@@ -102,3 +102,21 @@ flowchart TD
 | `flutter_secure_storage`                 | planned           | Auth session storage, once implemented               |
 
 Dev-only: `flutter_lints`, `build_runner`, `bloc_test`, `mocktail`, `flutter_launcher_icons`.
+
+## References
+
+### Parkinson screening module
+
+**Signal processing**
+- Welch, P. D. (1967). The use of fast Fourier transform for the estimation of power spectra: a method based on time averaging over short, modified periodograms. *IEEE Transactions on Audio and Electroacoustics*, 15(2), 70–73.
+- SciPy documentation. `scipy.signal.welch`, `butter`, `sosfiltfilt`. https://docs.scipy.org/doc/scipy/reference/signal.html
+
+**Tremor characterization**
+- Deuschl, G., Bain, P., & Brin, M. (1998). Consensus statement of the Movement Disorder Society on Tremor. *Movement Disorders*, 13(Suppl 3), 2–23.
+- Bhatia, K. P., et al. (2018). Consensus statement on the classification of tremors, from the Task Force on Tremor of the International Parkinson and Movement Disorder Society. *Movement Disorders*, 33(1), 75–87.
+
+**Accelerometer-based Parkinson's data**
+- Varghese, J., et al. (2024). Machine learning in the Parkinson's disease smartwatch (PADS) dataset. *npj Parkinson's Disease*, 10, 9. https://www.nature.com/articles/s41531-023-00625-7
+
+### Packages
+- sensors_plus (Flutter accelerometer package). https://pub.dev/packages/sensors_plus
