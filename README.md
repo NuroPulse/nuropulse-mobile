@@ -13,6 +13,7 @@ The codebase for NuroPulse's patient-facing mobile app, **a Parkinson’s compan
 ## Getting started
 
 ```bash
+cp .env.example .env   # fill in your Supabase project URL and publishable (anon) key
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # generates Freezed / JSON code
 dart format .
@@ -20,6 +21,8 @@ flutter analyze
 flutter test
 flutter run                                                 # physical Android device
 ```
+
+`.env` is git-ignored; `flutter_dotenv` loads it at startup (`core/environments/env.dart`) before `Supabase.initialize()` runs. Without it, the app fails fast with a clear error rather than silently misconfiguring Supabase.
 
 ## DSP pipeline
 
@@ -94,8 +97,8 @@ flowchart TD
 | `uuid`                                   | ^4.6.0            | Client-generated measurement IDs                     |
 | `share_plus`                             | ^13.3.1           | Sharing results/history                              |
 | `logger`                                 | ^2.8.0            | Wrapped by `services/logger_service.dart`            |
-| `supabase_flutter`                       | planned           | Auth & backend data, once implemented                |
+| `supabase_flutter`                       | ^2.18.3           | Backend client — auth & data, not yet wired past init |
+| `flutter_dotenv`                         | ^6.0.1            | Loads `.env` for `core/environments/` (Supabase URL/anon key) |
 | `flutter_secure_storage`                 | planned           | Auth session storage, once implemented               |
-| `flutter_dotenv`                         | planned           | Supabase URL/anon key from `.env`, once implemented  |
 
 Dev-only: `flutter_lints`, `build_runner`, `bloc_test`, `mocktail`, `flutter_launcher_icons`.
